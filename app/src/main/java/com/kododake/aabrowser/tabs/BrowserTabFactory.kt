@@ -28,6 +28,7 @@ import android.widget.FrameLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.kododake.aabrowser.data.BrowserPreferences
+import com.kododake.aabrowser.web.AdBlocker
 import com.kododake.aabrowser.web.BrowserCallbacks
 import com.kododake.aabrowser.web.ScrollJumpGuard
 import com.kododake.aabrowser.web.SpeechRecognitionBridge
@@ -182,5 +183,6 @@ object BrowserTabFactory {
                 }
             }
         }, "Android")
+        webView.addJavascriptInterface(AdBlocker.CosmeticBridge(), "AABAdBlock")
     }
 }

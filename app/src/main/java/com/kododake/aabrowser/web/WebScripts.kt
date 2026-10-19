@@ -95,8 +95,12 @@ object WebScripts {
     """.trimIndent()
 
     /**
-     * Cosmetic part of the ad blocker: hides ad containers left empty by blocked requests and
-     * skips YouTube video ads, which are served from the same hosts as the videos themselves.
+     * Cosmetic part of the ad blocker: hides ad containers using the filter lists' element hiding
+     * rules (fetched from the native `AABAdBlock` bridge) plus a few built-in selectors, and skips
+     * YouTube video ads, which are served from the same hosts as the videos themselves.
+     *
+     * Generic rules are only requested for the class and id names actually present in the page,
+     * as uBlock Origin does, instead of injecting the thousands of selectors EasyList contains.
      */
     val AD_BLOCK_COSMETIC_JS = """
         (function() {
@@ -137,17 +141,80 @@ object WebScripts {
                 'ytm-promoted-video-renderer'
             ].join(',') + '{display:none !important;}';
 
-            function injectStyle() {
+            const bridge = window.AABAdBlock;
+            let isTopFrame = true;
+            try { isTopFrame = window.top === window; } catch (_) { isTopFrame = false; }
+
+            function addStyle(text) {
+                if (!text) return true;
                 const root = document.head || document.documentElement;
                 if (!root) return false;
                 const style = document.createElement('style');
                 style.setAttribute('data-aab', 'adblock');
-                style.textContent = css;
+                style.textContent = text;
                 root.appendChild(style);
                 return true;
             }
-            if (!injectStyle()) {
-                document.addEventListener('DOMContentLoaded', injectStyle, { once: true });
+
+            let pageCss = '';
+            try {
+                if (bridge && bridge.pageCss) pageCss = bridge.pageCss(location.href, isTopFrame) || '';
+            } catch (_) {}
+            const initialCss = css + '\n' + pageCss;
+            if (!addStyle(initialCss)) {
+                document.addEventListener('DOMContentLoaded', function() { addStyle(initialCss); }, { once: true });
+            }
+
+            if (bridge && bridge.genericCss) {
+                const seen = new Set();
+                let pending = [];
+                let flushScheduled = false;
+
+                function note(token) {
+                    if (token.length > 1 && !seen.has(token)) {
+                        seen.add(token);
+                        pending.push(token);
+                    }
+                }
+                function collect(element) {
+                    if (element.id) note('#' + element.id);
+                    const classes = element.classList;
+                    if (classes) for (let i = 0; i < classes.length; i++) note('.' + classes[i]);
+                }
+                function scan(root) {
+                    if (!root || root.nodeType !== 1) return;
+                    collect(root);
+                    const elements = root.querySelectorAll('[id],[class]');
+                    for (let i = 0; i < elements.length; i++) collect(elements[i]);
+                }
+                function flush() {
+                    flushScheduled = false;
+                    if (!pending.length) return;
+                    const batch = pending.join(' ');
+                    pending = [];
+                    try { addStyle(bridge.genericCss(location.href, batch)); } catch (_) {}
+                }
+                function scheduleFlush() {
+                    if (flushScheduled) return;
+                    flushScheduled = true;
+                    setTimeout(flush, 250);
+                }
+                function start() {
+                    scan(document.documentElement);
+                    flush();
+                    new MutationObserver(function(mutations) {
+                        for (let i = 0; i < mutations.length; i++) {
+                            const added = mutations[i].addedNodes;
+                            for (let j = 0; j < added.length; j++) scan(added[j]);
+                        }
+                        if (pending.length) scheduleFlush();
+                    }).observe(document.documentElement, { childList: true, subtree: true });
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', start, { once: true });
+                } else {
+                    start();
+                }
             }
 
             let host = '';

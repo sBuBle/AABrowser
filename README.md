@@ -33,7 +33,7 @@ Transform your "parked time" with a sleek, modern browser designed specifically 
 
 - 🎨 **Material 3 Expressive UI:** Built specifically for car screens with fluid expressive animations, modern bottom sheets, and true-black AMOLED theme.
 - 🎬 **Immersive Video & Fullscreen:** Stream DRM-protected video (Widevine L3) and toggle instant fullscreen with a single tap for parked entertainment.
-- 🛡️ **Built-in Ad Blocker:** Blocks ads, trackers, and pop-ups, hides leftover ad slots, and skips YouTube video ads. Toggle it under Settings → Privacy and site data.
+- 🛡️ **Built-in Ad Blocker:** Uses the popular **EasyList**, **EasyPrivacy** and **Peter Lowe's** filter lists (auto-updated) to block ads and trackers, hide ad slots, stop pop-up windows and redirects to ad pages, and skip YouTube video ads. Toggle it under Settings → Privacy and site data.
 - 📶 **Resilient Streaming:** Audio and video streams recover automatically after connection drops (tunnels, Wi-Fi ↔ mobile handovers), and pages that failed offline reload as soon as you're back online.
 - 🚀 **Dynamic Start Page:** Up to 6 quick-link tiles with smooth drag-and-drop reordering, cached site icons, and custom background image support.
 - 🗂️ **Desktop-Class Tab Management:** Easily open, switch, close, and restore multiple browser tabs directly from your dashboard.

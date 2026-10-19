@@ -23,6 +23,7 @@ import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
 import android.os.Message
+import android.os.SystemClock
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
@@ -118,6 +119,8 @@ fun configureWebView(
 
 
         webChromeClient = object : WebChromeClient() {
+            private var lastPopupAt = 0L
+
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 callbacks.onProgressChange(newProgress)
             }
@@ -183,11 +186,20 @@ fun configureWebView(
                 resultMsg: Message?
             ): Boolean {
                 if (resultMsg == null) return false
-                if (!isUserGesture && AdBlocker.isEnabled) return false
+                if (AdBlocker.isEnabled) {
+                    // Pop-ups nobody tapped for, and the extra windows pop-under scripts open on
+                    // every tap, are refused outright.
+                    if (!isUserGesture) return false
+                    val now = SystemClock.uptimeMillis()
+                    if (now - lastPopupAt < POPUP_COOLDOWN_MS) return false
+                    lastPopupAt = now
+                }
                 val newWebView = callbacks.onCreateNewWindow()
                 if (newWebView != null) {
                     val transport = resultMsg.obj as? WebView.WebViewTransport
                     if (transport != null) {
+                        // Lets the new window's WebViewClient vet where the pop-up goes.
+                        newWebView.setTag(R.id.webview_popup_opener_url_tag, view?.url.orEmpty())
                         transport.webView = newWebView
                         resultMsg.sendToTarget()
                         return true
@@ -195,7 +207,7 @@ fun configureWebView(
                 } else {
                     val hitTest = view?.hitTestResult
                     val extraUrl = hitTest?.extra
-                    if (!extraUrl.isNullOrBlank()) {
+                    if (!extraUrl.isNullOrBlank() && !AdBlocker.shouldBlockNavigation(extraUrl, view.url, isPopup = true)) {
                         view.loadUrl(extraUrl)
                         return true
                     }
@@ -298,3 +310,4 @@ fun WebView.updateDrmL3Enforcer(enabled: Boolean, reload: Boolean = true) {
     }
 }
 
+private const val POPUP_COOLDOWN_MS = 1500L

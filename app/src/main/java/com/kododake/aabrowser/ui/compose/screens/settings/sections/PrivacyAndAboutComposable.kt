@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Security
@@ -64,7 +65,12 @@ import com.kododake.aabrowser.ui.compose.components.bouncyClickable
 import com.kododake.aabrowser.ui.compose.screens.dialogs.CustomUserAgentDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveConfirmationDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveSingleChoiceDialog
+import com.kododake.aabrowser.adblock.FilterListManager
+import com.kododake.aabrowser.web.AdBlocker
 import com.kododake.aabrowser.web.SslErrorHandlerHelper
+import java.text.DateFormat
+import java.text.NumberFormat
+import java.util.Date
 
 @Composable
 fun PrivacyAndAboutComposable(
@@ -78,6 +84,8 @@ fun PrivacyAndAboutComposable(
     var customUserAgent by remember { mutableStateOf(BrowserPreferences.getCustomUserAgent(context)) }
     var drmL3Enabled by remember { mutableStateOf(BrowserPreferences.isDrmL3EnforcerEnabled(context)) }
     var adBlockerEnabled by remember { mutableStateOf(BrowserPreferences.isAdBlockerEnabled(context)) }
+    var filterListsStatus by remember { mutableStateOf(filterListsStatus(context)) }
+    var filterListsUpdating by remember { mutableStateOf(false) }
     var showUaDialog by remember { mutableStateOf(false) }
     var showCustomUaDialog by remember { mutableStateOf(false) }
     var showClearCookiesDialog by remember { mutableStateOf(false) }
@@ -157,6 +165,33 @@ fun PrivacyAndAboutComposable(
                 adBlockerEnabled = next
                 BrowserPreferences.setAdBlockerEnabled(context, next)
                 onAdBlockerChanged()
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_ad_block_lists),
+            supportingText = if (filterListsUpdating) {
+                stringResource(R.string.settings_ad_block_lists_updating)
+            } else {
+                filterListsStatus
+            },
+            leadingIcon = Icons.Rounded.FilterList,
+            position = ListGroupPosition.Middle,
+            onClick = {
+                if (!filterListsUpdating) {
+                    filterListsUpdating = true
+                    AdBlocker.updateFilterLists(context) { updated ->
+                        filterListsUpdating = false
+                        filterListsStatus = filterListsStatus(context)
+                        Toast.makeText(
+                            context,
+                            if (updated) R.string.settings_ad_block_lists_updated else R.string.settings_ad_block_lists_update_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         )
 
@@ -302,4 +337,14 @@ fun PrivacyAndAboutComposable(
             onDismiss = { showClearCookiesDialog = false }
         )
     }
+}
+
+private fun filterListsStatus(context: Context): String {
+    val lastUpdated = FilterListManager.lastUpdated(context)
+    if (lastUpdated == 0L) return context.getString(R.string.settings_ad_block_lists_never_updated)
+    return context.getString(
+        R.string.settings_ad_block_lists_status,
+        NumberFormat.getIntegerInstance().format(AdBlocker.ruleCount),
+        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(lastUpdated))
+    )
 }
