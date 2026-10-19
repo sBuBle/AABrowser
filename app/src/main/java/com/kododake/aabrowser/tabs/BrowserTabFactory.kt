@@ -19,8 +19,10 @@ package com.kododake.aabrowser.tabs
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.SystemClock
+import android.view.Display
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -34,6 +36,7 @@ import com.kododake.aabrowser.web.ScrollJumpGuard
 import com.kododake.aabrowser.web.SpeechRecognitionBridge
 import com.kododake.aabrowser.web.TouchGlitchFilter
 import com.kododake.aabrowser.web.configureWebView
+import kotlin.math.hypot
 
 /**
  * Factory for instantiating and configuring WebView instances and their associated BrowserTab wrappers.
@@ -90,8 +93,13 @@ object BrowserTabFactory {
     }
 
     /**
-     * Cleans up the touch stream car head units deliver (see [TouchGlitchFilter]) and undoes a
-     * page that still leaps backwards as the finger lifts after a scroll (see [ScrollJumpGuard]).
+     * Cleans up the touch stream on car displays (Android Auto), where scrolling and lifting the
+     * finger could throw the page back to the top; the phone's own screen is left untouched.
+     *
+     * On the car display, stray samples are dropped ([TouchGlitchFilter]), and a scroll ends with a
+     * fling computed from trusted samples only, capped and never against the scroll direction,
+     * instead of WebView's own fling from the raw lift-off. [ScrollJumpGuard] undoes any leap back
+     * that still happens.
      */
     private fun setupTouchStabilization(
         context: Context,
@@ -100,18 +108,26 @@ object BrowserTabFactory {
     ) {
         val config = ViewConfiguration.get(context)
         val touchSlop = config.scaledTouchSlop
+        val maxFlingPxPerMs = config.scaledMaximumFlingVelocity / 1000f
+        val minFlingPxPerMs = config.scaledMinimumFlingVelocity / 1000f
         val touchFilter = TouchGlitchFilter(
-            maxSpeedPxPerMs = config.scaledMaximumFlingVelocity * 2f / 1000f,
+            maxSpeedPxPerMs = maxFlingPxPerMs * 2f,
             minGlitchDistancePx = touchSlop * 4f
         )
         val jumpGuard = ScrollJumpGuard()
+        var onCarDisplay = false
 
         webView.setOnTouchListener { view, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                // Only react to the start of a gesture: doing this for every move event
+                // re-posted the menu button timers and recomposed it while scrolling.
+                onShowMenuButtonTemporarily()
+                onCarDisplay = isCarDisplay(view)
+            }
+            if (!onCarDisplay) return@setOnTouchListener false
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Only react to the start of a gesture: doing this for every move event
-                    // re-posted the menu button timers and recomposed it while scrolling.
-                    onShowMenuButtonTemporarily()
                     touchFilter.onDown(event.x, event.y, event.eventTime)
                     jumpGuard.onTouchDown(view.scrollY)
                 }
@@ -121,8 +137,19 @@ object BrowserTabFactory {
                     }
                 }
                 MotionEvent.ACTION_UP -> {
-                    touchFilter.resolveUp(event.x, event.y, event.eventTime)?.let { (x, y) ->
-                        event.setLocation(x, y)
+                    if (touchFilter.hasScrolled(touchSlop.toFloat())) {
+                        val (vx, vy) = touchFilter.flingVelocity(maxFlingPxPerMs)
+                        touchFilter.reset()
+                        // End the scroll without WebView's own fling, then fling ourselves.
+                        event.action = MotionEvent.ACTION_CANCEL
+                        if (hypot(vx, vy) >= minFlingPxPerMs) {
+                            // flingScroll takes scroll velocity: the page scrolls opposite to the finger.
+                            webView.post { webView.flingScroll((-vx * 1000f).toInt(), (-vy * 1000f).toInt()) }
+                        }
+                    } else {
+                        touchFilter.resolveUp(event.x, event.y, event.eventTime)?.let { (x, y) ->
+                            event.setLocation(x, y)
+                        }
                     }
                     jumpGuard.onGestureEnd(view.scrollY, event.eventTime, view.height, touchSlop)
                 }
@@ -142,6 +169,16 @@ object BrowserTabFactory {
                 webView.scrollTo(scrollX, restoreY)
             }
         }
+    }
+
+    /**
+     * Android Auto shows the browser on its own display; the phone's screen is the default one.
+     * Car UI mode covers head units that host the app on the main display.
+     */
+    private fun isCarDisplay(view: View): Boolean {
+        val displayId = view.display?.displayId ?: Display.DEFAULT_DISPLAY
+        val uiModeType = view.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        return displayId != Display.DEFAULT_DISPLAY || uiModeType == Configuration.UI_MODE_TYPE_CAR
     }
 
     /** Batched move events carry earlier samples too; a glitch hidden among them also counts. */

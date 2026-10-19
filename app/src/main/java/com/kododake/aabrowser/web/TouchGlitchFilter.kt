@@ -48,12 +48,23 @@ class TouchGlitchFilter(
     private var lastY = 0f
     private var lastTime = 0L
     private var droppedInARow = 0
+    private var maxDistanceFromDown = 0f
+
+    // Recent trusted samples, used to work out the fling velocity at lift-off.
+    private val recentX = FloatArray(RECENT_SAMPLES)
+    private val recentY = FloatArray(RECENT_SAMPLES)
+    private val recentTime = LongArray(RECENT_SAMPLES)
+    private var recentCount = 0
+    private var recentNext = 0
 
     fun onDown(x: Float, y: Float, time: Long) {
         tracking = true
         downX = x
         downY = y
         droppedInARow = 0
+        maxDistanceFromDown = 0f
+        recentCount = 0
+        recentNext = 0
         accept(x, y, time)
     }
 
@@ -73,6 +84,40 @@ class TouchGlitchFilter(
         droppedInARow = 0
         accept(x, y, time)
         return true
+    }
+
+    /** Whether the current gesture has moved further than [slopPx] from where it started. */
+    fun hasScrolled(slopPx: Float): Boolean = tracking && maxDistanceFromDown > slopPx
+
+    /**
+     * Velocity in px/ms the gesture should fling with, measured over the trusted samples of the
+     * last [VELOCITY_WINDOW_MS] rather than the last few events, so bursts of samples delivered at
+     * once do not inflate it. Each axis is zeroed when it points against the overall movement of
+     * the gesture and clamped to [maxSpeedPxPerMs], so a fling can never throw the page back.
+     */
+    fun flingVelocity(maxSpeedPxPerMs: Float): Pair<Float, Float> {
+        if (!tracking || recentCount < 2) return 0f to 0f
+        val newest = (recentNext - 1 + RECENT_SAMPLES) % RECENT_SAMPLES
+        var oldest = newest
+        for (i in 1 until recentCount) {
+            val index = (newest - i + RECENT_SAMPLES) % RECENT_SAMPLES
+            if (recentTime[newest] - recentTime[index] > VELOCITY_WINDOW_MS) {
+                // Sparse samples (slow head units): fall back to the previous one if recent enough.
+                if (oldest == newest && recentTime[newest] - recentTime[index] <= SPARSE_VELOCITY_WINDOW_MS) oldest = index
+                break
+            }
+            oldest = index
+        }
+        val elapsed = recentTime[newest] - recentTime[oldest]
+        if (elapsed <= 0L) return 0f to 0f
+        val vx = (recentX[newest] - recentX[oldest]) / elapsed
+        val vy = (recentY[newest] - recentY[oldest]) / elapsed
+        return constrain(vx, lastX - downX, maxSpeedPxPerMs) to constrain(vy, lastY - downY, maxSpeedPxPerMs)
+    }
+
+    private fun constrain(velocity: Float, travelled: Float, max: Float): Float {
+        if (velocity * travelled <= 0f) return 0f
+        return velocity.coerceIn(-max, max)
     }
 
     /**
@@ -115,9 +160,18 @@ class TouchGlitchFilter(
         lastX = x
         lastY = y
         lastTime = time
+        maxDistanceFromDown = max(maxDistanceFromDown, hypot(x - downX, y - downY))
+        recentX[recentNext] = x
+        recentY[recentNext] = y
+        recentTime[recentNext] = time
+        recentNext = (recentNext + 1) % RECENT_SAMPLES
+        recentCount = minOf(recentCount + 1, RECENT_SAMPLES)
     }
 
     private companion object {
         const val MAX_DROPPED_IN_A_ROW = 2
+        const val RECENT_SAMPLES = 16
+        const val VELOCITY_WINDOW_MS = 100L
+        const val SPARSE_VELOCITY_WINDOW_MS = 250L
     }
 }
