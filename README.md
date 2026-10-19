@@ -33,6 +33,8 @@ Transform your "parked time" with a sleek, modern browser designed specifically 
 
 - 🎨 **Material 3 Expressive UI:** Built specifically for car screens with fluid expressive animations, modern bottom sheets, and true-black AMOLED theme.
 - 🎬 **Immersive Video & Fullscreen:** Stream DRM-protected video (Widevine L3) and toggle instant fullscreen with a single tap for parked entertainment.
+- 🛡️ **Built-in Ad Blocker:** Blocks ads, trackers, and pop-ups, hides leftover ad slots, and skips YouTube video ads. Toggle it under Settings → Privacy and site data.
+- 📶 **Resilient Streaming:** Audio and video streams recover automatically after connection drops (tunnels, Wi-Fi ↔ mobile handovers), and pages that failed offline reload as soon as you're back online.
 - 🚀 **Dynamic Start Page:** Up to 6 quick-link tiles with smooth drag-and-drop reordering, cached site icons, and custom background image support.
 - 🗂️ **Desktop-Class Tab Management:** Easily open, switch, close, and restore multiple browser tabs directly from your dashboard.
 - 🚗 **Car-First Controls:** One-touch mobile/desktop mode switching, global UI scaling, and intuitive bookmark management designed for head units.
@@ -76,7 +78,6 @@ If the app fails to launch, try opening a non-Google Maps navigation app (such a
 
 ## ⚠️ Current Issues
 
-- 🚫 **No Ad Blocking:** Ad filtering is not currently implemented. *(💡 **Tip:** If you want to use your own favorite browser with built-in ad-blocking or other apps like VLC on Android Auto, check out **[AA Anything](https://github.com/kododake/AAAnything)**, another app I built!)*
 - 🚗 **Stationary Use Only**
 
 ---

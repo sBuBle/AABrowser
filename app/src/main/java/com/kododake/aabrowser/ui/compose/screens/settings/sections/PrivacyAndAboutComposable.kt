@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Devices
@@ -69,12 +70,14 @@ import com.kododake.aabrowser.web.SslErrorHandlerHelper
 fun PrivacyAndAboutComposable(
     context: Context,
     onDrmL3EnforcerChanged: () -> Unit = {},
+    onAdBlockerChanged: () -> Unit = {},
     onUserAgentChanged: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var userAgent by remember { mutableStateOf(BrowserPreferences.getUserAgentProfile(context)) }
     var customUserAgent by remember { mutableStateOf(BrowserPreferences.getCustomUserAgent(context)) }
     var drmL3Enabled by remember { mutableStateOf(BrowserPreferences.isDrmL3EnforcerEnabled(context)) }
+    var adBlockerEnabled by remember { mutableStateOf(BrowserPreferences.isAdBlockerEnabled(context)) }
     var showUaDialog by remember { mutableStateOf(false) }
     var showCustomUaDialog by remember { mutableStateOf(false) }
     var showClearCookiesDialog by remember { mutableStateOf(false) }
@@ -129,6 +132,31 @@ fun PrivacyAndAboutComposable(
                 drmL3Enabled = next
                 BrowserPreferences.setDrmL3EnforcerEnabled(context, next)
                 onDrmL3EnforcerChanged()
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_ad_blocker),
+            supportingText = stringResource(R.string.settings_ad_blocker_description),
+            leadingIcon = Icons.Rounded.Block,
+            position = ListGroupPosition.Middle,
+            trailingContent = {
+                Switch(
+                    checked = adBlockerEnabled,
+                    onCheckedChange = { checked ->
+                        adBlockerEnabled = checked
+                        BrowserPreferences.setAdBlockerEnabled(context, checked)
+                        onAdBlockerChanged()
+                    }
+                )
+            },
+            onClick = {
+                val next = !adBlockerEnabled
+                adBlockerEnabled = next
+                BrowserPreferences.setAdBlockerEnabled(context, next)
+                onAdBlockerChanged()
             }
         )
 

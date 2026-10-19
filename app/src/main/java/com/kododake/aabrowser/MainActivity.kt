@@ -36,12 +36,14 @@ import com.kododake.aabrowser.main.FreeDroidWarnHelper
 import com.kododake.aabrowser.main.MainActivityBackPressHandler
 import com.kododake.aabrowser.main.MainActivityCallbackFactory
 import com.kododake.aabrowser.main.MenuFabController
+import com.kododake.aabrowser.main.NetworkStateMonitor
 import com.kododake.aabrowser.main.WebViewWarmupHelper
 import com.kododake.aabrowser.model.QuickActionButtonMode
 import com.kododake.aabrowser.tabs.BrowserTab
 import com.kododake.aabrowser.ui.MainActivitySetup
 import com.kododake.aabrowser.ui.controllers.NavigationButtonUpdater
 import com.kododake.aabrowser.ui.controllers.ProgressIndicatorController
+import com.kododake.aabrowser.web.AdBlocker
 
 class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHost {
 
@@ -76,6 +78,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
 
     private val progressController: ProgressIndicatorController by lazy {
         ProgressIndicatorController(binding.progressComposeView)
+    }
+
+    private val networkStateMonitor: NetworkStateMonitor by lazy {
+        NetworkStateMonitor(this) { available ->
+            managers.tabManager.applyNetworkAvailability(available)
+        }
     }
 
     var webView: WebView? = null
@@ -118,6 +126,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         managers.umamiTracker.trackEvent("app_open")
         setupUi()
         setupBackPressHandling()
+        networkStateMonitor.start()
 
         managers.permissionManager.ensureNotificationPermissionIfNeeded(REQUEST_CODE_POST_NOTIFICATIONS)
         FreeDroidWarnHelper.checkAndShow(this, managers.themeManager.resolveThemeColor(androidx.appcompat.R.attr.colorError)) { url ->
@@ -141,6 +150,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         managers.tabManager.refreshTabs()
         managers.startPageManager.refreshStartPage()
         syncUserAgentProfile()
+        syncAdBlocker()
         managers.uiManager.applyQuickActionButtonPreferences()
     }
 
@@ -152,6 +162,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
     }
 
     override fun onDestroy() {
+        networkStateMonitor.stop()
         menuFabController.cleanup()
         managers.uiManager.exitFullscreen()
         managers.startPageManager.onDestroy()
@@ -264,6 +275,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
             BrowserPreferences.shouldUseDesktopMode(this)
         )
     }
+
+    private fun syncAdBlocker() {
+        val enabled = BrowserPreferences.isAdBlockerEnabled(this)
+        if (enabled != AdBlocker.isEnabled) {
+            managers.tabManager.updateAdBlocker(enabled)
+        }
+    }
+
     override fun onUrlChanged(url: String) { currentUrl = url }
     override fun onTitleChanged(title: String) {
         currentPageTitle = title

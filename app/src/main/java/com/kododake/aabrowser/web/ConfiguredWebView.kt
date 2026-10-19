@@ -50,14 +50,24 @@ fun configureWebView(
     callbacks: BrowserCallbacks = BrowserCallbacks(),
     useDesktopMode: Boolean = false,
     userAgentProfile: UserAgentProfile = UserAgentProfile.ANDROID_CHROME,
-    enableDrmL3Enforcer: Boolean = true
+    enableDrmL3Enforcer: Boolean = true,
+    enableAdBlocker: Boolean = true
 ) {
     with(webView) {
         setBackgroundColor(Color.TRANSPARENT)
 
-        if (enableDrmL3Enforcer && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            val handler = WebViewCompat.addDocumentStartJavaScript(this, WebScripts.DRM_L3_ENFORCER_JS, setOf("*"))
-            setTag(R.id.webview_drm_l3_script_handler_tag, handler)
+        AdBlocker.initialize(context)
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            if (enableDrmL3Enforcer) {
+                val handler = WebViewCompat.addDocumentStartJavaScript(this, WebScripts.DRM_L3_ENFORCER_JS, setOf("*"))
+                setTag(R.id.webview_drm_l3_script_handler_tag, handler)
+            }
+            if (enableAdBlocker) {
+                val handler = WebViewCompat.addDocumentStartJavaScript(this, WebScripts.AD_BLOCK_COSMETIC_JS, setOf("*"))
+                setTag(R.id.webview_ad_block_script_handler_tag, handler)
+            }
+            WebViewCompat.addDocumentStartJavaScript(this, WebScripts.MEDIA_STREAM_RECOVERY_JS, setOf("*"))
         }
 
         isHorizontalScrollBarEnabled = false
@@ -168,6 +178,7 @@ fun configureWebView(
                 resultMsg: Message?
             ): Boolean {
                 if (resultMsg == null) return false
+                if (!isUserGesture && AdBlocker.isEnabled) return false
                 val newWebView = callbacks.onCreateNewWindow()
                 if (newWebView != null) {
                     val transport = resultMsg.obj as? WebView.WebViewTransport
@@ -217,6 +228,34 @@ fun WebView.updateDesktopMode(enable: Boolean, profile: UserAgentProfile) {
 fun WebView.updateUserAgentProfile(profile: UserAgentProfile, desktop: Boolean) {
     UserAgentManager.applyBrowserIdentity(this, profile, desktop)
     reload()
+}
+
+fun WebView.updateAdBlocker(enabled: Boolean, reload: Boolean = true) {
+    if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+        val existingHandler = getTag(R.id.webview_ad_block_script_handler_tag) as? ScriptHandler
+        if (enabled) {
+            if (existingHandler == null) {
+                val handler = WebViewCompat.addDocumentStartJavaScript(this, WebScripts.AD_BLOCK_COSMETIC_JS, setOf("*"))
+                setTag(R.id.webview_ad_block_script_handler_tag, handler)
+            }
+        } else {
+            existingHandler?.remove()
+            setTag(R.id.webview_ad_block_script_handler_tag, null)
+        }
+    }
+    if (reload) {
+        reload()
+    }
+}
+
+/**
+ * Propagates the device's connectivity to the page (`navigator.onLine` and `online`/`offline`
+ * events, which media players use to pause and resume streams) and serves cached copies while
+ * offline so back/forward navigation keeps working without a connection.
+ */
+fun WebView.applyNetworkAvailability(available: Boolean) {
+    setNetworkAvailable(available)
+    settings.cacheMode = if (available) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_CACHE_ELSE_NETWORK
 }
 
 fun WebView.releaseCompletely() {

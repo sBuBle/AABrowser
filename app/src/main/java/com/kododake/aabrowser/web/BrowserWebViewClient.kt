@@ -55,6 +55,13 @@ class BrowserWebViewClient(
         return true
     }
 
+    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+        if (AdBlocker.shouldBlock(view.context, request)) {
+            return AdBlocker.blockedResponse()
+        }
+        return super.shouldInterceptRequest(view, request)
+    }
+
     override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
         val stringUrl = url ?: return
@@ -78,6 +85,10 @@ class BrowserWebViewClient(
             if (BrowserPreferences.isDrmL3EnforcerEnabled(view.context)) {
                 view.evaluateJavascript(WebScripts.DRM_L3_ENFORCER_JS, null)
             }
+            if (AdBlocker.isEnabled) {
+                view.evaluateJavascript(WebScripts.AD_BLOCK_COSMETIC_JS, null)
+            }
+            view.evaluateJavascript(WebScripts.MEDIA_STREAM_RECOVERY_JS, null)
         }
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.NAVIGATION_LISTENER)) {
             url?.let(callbacks.onUrlChange)

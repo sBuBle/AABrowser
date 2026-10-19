@@ -200,6 +200,7 @@ fun SettingsScreen(
                     PrivacyAndAboutComposable(
                         context = context,
                         onDrmL3EnforcerChanged = callbacks.onDrmL3EnforcerChanged,
+                        onAdBlockerChanged = callbacks.onAdBlockerChanged,
                         onUserAgentChanged = callbacks.onUserAgentChanged
                     )
 

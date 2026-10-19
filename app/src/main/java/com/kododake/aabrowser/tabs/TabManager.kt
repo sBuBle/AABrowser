@@ -17,6 +17,7 @@
 
 package com.kododake.aabrowser.tabs
 
+import android.net.Uri
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,8 +29,12 @@ import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.model.UserAgentProfile
 import com.kododake.aabrowser.ui.compose.screens.tabs.TabItemUi
+import com.kododake.aabrowser.web.AdBlocker
 import com.kododake.aabrowser.web.UserAgentManager
+import com.kododake.aabrowser.web.WebViewNavigationHelper
+import com.kododake.aabrowser.web.applyNetworkAvailability
 import com.kododake.aabrowser.web.releaseCompletely
+import com.kododake.aabrowser.web.updateAdBlocker
 import com.kododake.aabrowser.web.updateDesktopMode
 import com.kododake.aabrowser.web.updateUserAgentProfile
 
@@ -291,5 +296,40 @@ class TabManager(
         browserTabs
             .filterNot { tab -> UserAgentManager.isBrowserIdentityApplied(tab.webView, profile, desktop) }
             .forEach { tab -> tab.webView.updateUserAgentProfile(profile, desktop) }
+    }
+
+    fun updateAdBlocker(enabled: Boolean) {
+        AdBlocker.setEnabled(enabled)
+        browserTabs.forEach { tab -> tab.webView.updateAdBlocker(enabled) }
+    }
+
+    /**
+     * Pushes connectivity changes to every tab and, once the connection is back, retries tabs
+     * that are showing the offline error page instead of leaving them stuck on it.
+     */
+    fun applyNetworkAvailability(available: Boolean) {
+        browserTabs.forEach { tab ->
+            tab.webView.applyNetworkAvailability(available)
+            if (available) {
+                failedUrlForNetworkError(tab.webView.url)?.let { failedUrl ->
+                    WebViewNavigationHelper.navigate(tab.webView, failedUrl, replaceCurrentEntry = true)
+                }
+            }
+        }
+    }
+
+    private fun failedUrlForNetworkError(pageUrl: String?): String? {
+        if (pageUrl == null || !pageUrl.startsWith(ERROR_PAGE_URL)) return null
+        val uri = runCatching { Uri.parse(pageUrl) }.getOrNull() ?: return null
+        // Negative codes are WebViewClient connection errors; positive ones are HTTP statuses that
+        // a reconnect will not fix.
+        val code = uri.getQueryParameter("code")?.toIntOrNull() ?: return null
+        if (code >= 0) return null
+        val failedUrl = uri.getQueryParameter("failedUrl")?.takeIf { it.isNotBlank() } ?: return null
+        return failedUrl.takeIf { BrowserPreferences.isHttpOrHttps(it) }
+    }
+
+    private companion object {
+        const val ERROR_PAGE_URL = "file:///android_asset/error.html"
     }
 }
