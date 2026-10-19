@@ -20,6 +20,7 @@ package com.kododake.aabrowser.tabs
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import androidx.webkit.WebViewCompat
@@ -77,8 +78,12 @@ object BrowserTabFactory {
         setupWebMessageListener(tabView, speechBridge)
         setupJavascriptInterface(context, tabView, onSanitizeJsExternalUrl, onOpenUriExternally)
 
-        tabView.setOnTouchListener { _, _ ->
-            onShowMenuButtonTemporarily()
+        tabView.setOnTouchListener { _, event ->
+            // Only react to the start of a gesture: doing this for every move event re-posted the
+            // menu button timers and recomposed it at the touch sample rate while scrolling.
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                onShowMenuButtonTemporarily()
+            }
             false
         }
         tabView.onPause()

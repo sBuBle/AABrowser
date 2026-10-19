@@ -39,7 +39,7 @@
             android:resource="@xml/automotive_app_desc" />
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|uiMode|layoutDirection|locale"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|uiMode|layoutDirection|locale|keyboard|keyboardHidden|navigation|touchscreen"
             android:launchMode="singleTop"
             android:exported="true"
             android:resizeableActivity="true"

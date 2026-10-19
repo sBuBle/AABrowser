@@ -97,9 +97,14 @@ fun configureWebView(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 safeBrowsingEnabled = true
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                offscreenPreRaster = true
-            }
+            // Raster tiles ahead of scrolling only for the visible tab (see setForegroundTab):
+            // enabling it on every tab multiplies GPU memory use and starves video playback.
+            offscreenPreRaster = false
+            // Car displays driven by a rotary knob or touchpad are often not in touch mode. In that
+            // mode WebView moves focus to the first element on the page whenever it regains focus
+            // (after the menu button hides, an overlay closes, a tab switch), which scrolls the
+            // page back to the top while the user is reading further down.
+            setNeedInitialFocus(false)
         }
 
         UserAgentManager.applyBrowserIdentity(this, userAgentProfile, useDesktopMode)
@@ -218,6 +223,14 @@ fun configureWebView(
             )
         }
     }
+}
+
+/**
+ * Marks this tab as the visible one (or not) so only it pre-rasters content off screen for smooth
+ * scrolling, keeping background tabs from competing with it for memory and GPU time.
+ */
+fun WebView.setForegroundTab(foreground: Boolean) {
+    settings.offscreenPreRaster = foreground
 }
 
 fun WebView.updateDesktopMode(enable: Boolean, profile: UserAgentProfile) {

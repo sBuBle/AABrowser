@@ -155,10 +155,17 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
     }
 
     override fun onPause() {
-        managers.uiManager.exitFullscreen()
         webView?.onPause()
         managers.tabManager.persistTabSession()
         super.onPause()
+    }
+
+    override fun onStop() {
+        // Leave fullscreen video only once the browser is really hidden. Android Auto pauses the
+        // activity for transient overlays (assistant, calls, notifications), and exiting there
+        // kicked the video out of fullscreen on every interruption.
+        managers.uiManager.exitFullscreen()
+        super.onStop()
     }
 
     override fun onDestroy() {
