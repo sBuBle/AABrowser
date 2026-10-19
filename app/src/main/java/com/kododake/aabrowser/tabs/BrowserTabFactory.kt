@@ -22,12 +22,14 @@ import android.content.Context
 import android.net.Uri
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.web.BrowserCallbacks
 import com.kododake.aabrowser.web.SpeechRecognitionBridge
+import com.kododake.aabrowser.web.TouchGlitchFilter
 import com.kododake.aabrowser.web.configureWebView
 
 /**
@@ -78,17 +80,41 @@ object BrowserTabFactory {
         setupWebMessageListener(tabView, speechBridge)
         setupJavascriptInterface(context, tabView, onSanitizeJsExternalUrl, onOpenUriExternally)
 
+        val touchFilter = createTouchGlitchFilter(context)
         tabView.setOnTouchListener { _, event ->
-            // Only react to the start of a gesture: doing this for every move event re-posted the
-            // menu button timers and recomposed it at the touch sample rate while scrolling.
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                onShowMenuButtonTemporarily()
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    // Only react to the start of a gesture: doing this for every move event
+                    // re-posted the menu button timers and recomposed it while scrolling.
+                    onShowMenuButtonTemporarily()
+                    touchFilter.onDown(event.x, event.y, event.eventTime)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (event.pointerCount == 1 && !touchFilter.acceptMove(event.x, event.y, event.eventTime)) {
+                        return@setOnTouchListener true
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    touchFilter.resolveUp(event.x, event.y, event.eventTime)?.let { (x, y) ->
+                        event.setLocation(x, y)
+                    }
+                }
+                MotionEvent.ACTION_POINTER_DOWN,
+                MotionEvent.ACTION_CANCEL -> touchFilter.reset()
             }
             false
         }
         tabView.onPause()
 
         return tab
+    }
+
+    private fun createTouchGlitchFilter(context: Context): TouchGlitchFilter {
+        val config = ViewConfiguration.get(context)
+        return TouchGlitchFilter(
+            maxSpeedPxPerMs = config.scaledMaximumFlingVelocity * 2f / 1000f,
+            minGlitchDistancePx = config.scaledTouchSlop * 4f
+        )
     }
 
     private fun setupWebMessageListener(webView: android.webkit.WebView, speechBridge: SpeechRecognitionBridge) {
