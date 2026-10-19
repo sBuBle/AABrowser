@@ -38,12 +38,39 @@ class BrowserWebViewClient(
     private val callbacks: BrowserCallbacks
 ) : WebViewClient() {
 
+    /** URL of the page shown in this WebView; read from WebView's network threads. */
+    @Volatile
+    private var pageUrl: String? = null
+
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val uri = request.url
+        if (request.isForMainFrame && blockAdNavigation(view, uri?.toString())) {
+            return true
+        }
         if (CleartextNavigationHandler.handleCleartextIfNeeded(view, uri, callbacks, onPageStart = false)) {
             return true
         }
         return handleUri(uri)
+    }
+
+    /**
+     * Stops "jumping windows": a pop-up window that opens an ad, or a page that sends itself to an
+     * ad or redirect network. Pop-up windows are closed again and the user is returned to the page
+     * that opened them.
+     */
+    private fun blockAdNavigation(view: WebView, url: String?): Boolean {
+        if (url == null || !BrowserPreferences.isHttpOrHttps(url)) return false
+        val openerUrl = view.getTag(R.id.webview_popup_opener_url_tag) as? String
+        val isPopup = openerUrl != null
+        if (!AdBlocker.shouldBlockNavigation(url, if (isPopup) openerUrl else pageUrl, isPopup)) return false
+        view.stopLoading()
+        if (isPopup) {
+            view.setTag(R.id.webview_popup_opener_url_tag, null)
+            callbacks.onPopupBlocked()
+        } else {
+            callbacks.onAdRedirectBlocked()
+        }
+        return true
     }
 
     private fun handleUri(uri: Uri?): Boolean {
@@ -55,9 +82,24 @@ class BrowserWebViewClient(
         return true
     }
 
+    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+        if (request.isForMainFrame) {
+            pageUrl = request.url?.toString()
+        }
+        if (AdBlocker.shouldBlock(request, pageUrl)) {
+            return AdBlocker.blockedResponse()
+        }
+        return super.shouldInterceptRequest(view, request)
+    }
+
     override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
         val stringUrl = url ?: return
+        pageUrl = stringUrl
+        // A pop-up's first page load does not always pass through shouldOverrideUrlLoading.
+        if (view.getTag(R.id.webview_popup_opener_url_tag) != null && blockAdNavigation(view, stringUrl)) {
+            return
+        }
         val uri = Uri.parse(stringUrl)
         val scheme = uri.scheme?.lowercase()
 
@@ -73,11 +115,19 @@ class BrowserWebViewClient(
 
     override fun onPageFinished(view: WebView, url: String?) {
         super.onPageFinished(view, url)
+        if (url != null && BrowserPreferences.isHttpOrHttps(url)) {
+            // The pop-up made it to a real page; from here on it is an ordinary tab.
+            view.setTag(R.id.webview_popup_opener_url_tag, null)
+        }
         view.evaluateJavascript(SpeechRecognitionBridge.POLYFILL_JS, null)
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             if (BrowserPreferences.isDrmL3EnforcerEnabled(view.context)) {
                 view.evaluateJavascript(WebScripts.DRM_L3_ENFORCER_JS, null)
             }
+            if (AdBlocker.isEnabled) {
+                view.evaluateJavascript(WebScripts.AD_BLOCK_COSMETIC_JS, null)
+            }
+            view.evaluateJavascript(WebScripts.MEDIA_STREAM_RECOVERY_JS, null)
         }
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.NAVIGATION_LISTENER)) {
             url?.let(callbacks.onUrlChange)

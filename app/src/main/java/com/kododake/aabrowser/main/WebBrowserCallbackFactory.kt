@@ -147,9 +147,28 @@ class WebBrowserCallbackFactory(
                     if (provider.startPageManager.isShowingStartPage) {
                         provider.startPageManager.hideStartPage("", "")
                     }
+                    newTab.webView.setTag(R.id.webview_popup_opener_tab_tag, tab.id)
                     newTab.webView
                 } else {
                     null
+                }
+            },
+            onPopupBlocked = {
+                // Posted: the tab's WebView is still inside its own WebViewClient callback here.
+                binding.root.post {
+                    val openerId = tab.webView.getTag(R.id.webview_popup_opener_tab_tag) as? Long
+                    provider.tabManager.closeTab(tab.id) {}
+                    if (openerId != null && provider.tabManager.browserTabs.any { it.id == openerId }) {
+                        provider.tabManager.switchToTab(openerId)
+                    }
+                    Toast.makeText(activity, R.string.popup_blocked, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onAdRedirectBlocked = {
+                activity.runOnUiThread {
+                    if (tab.id == provider.tabManager.activeTabId) {
+                        Toast.makeText(activity, R.string.ad_redirect_blocked, Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             onRenderProcessGone = { didCrash ->

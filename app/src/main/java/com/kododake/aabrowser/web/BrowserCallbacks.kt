@@ -41,5 +41,7 @@ data class BrowserCallbacks(
     val onPermissionRequest: (PermissionRequest) -> Unit = { it.deny() },
     val onGeolocationPermissionRequest: (String?, android.webkit.GeolocationPermissions.Callback?) -> Unit = { _, callback -> callback?.invoke(null, false, false) },
     val onCreateNewWindow: () -> android.webkit.WebView? = { null },
+    val onPopupBlocked: () -> Unit = {},
+    val onAdRedirectBlocked: () -> Unit = {},
     val onRenderProcessGone: (Boolean) -> Unit = {}
 )

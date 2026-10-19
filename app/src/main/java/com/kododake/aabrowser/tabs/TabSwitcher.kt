@@ -20,6 +20,7 @@ package com.kododake.aabrowser.tabs
 import android.view.View
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.web.WebViewNavigationHelper
+import com.kododake.aabrowser.web.setForegroundTab
 
 object TabSwitcher {
 
@@ -59,6 +60,7 @@ object TabSwitcher {
         browserTabs.forEach { tab ->
             val isVisible = (tab.id == activeTabInstance.id)
             tab.webView.visibility = if (isVisible) View.VISIBLE else View.GONE
+            tab.webView.setForegroundTab(isVisible)
             if (isVisible) {
                 tab.webView.bringToFront()
                 tab.webView.requestFocus()

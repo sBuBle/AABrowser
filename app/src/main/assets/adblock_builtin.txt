@@ -1,0 +1,168 @@
+! Title: AABrowser built-in filters
+! Adblock Plus syntax. Used until the downloaded lists (EasyList, EasyPrivacy, Peter Lowe's list)
+! are available, and kept alongside them afterwards for car-relevant extras such as YouTube ad beacons.
+!
+! Top-level page navigations are never blocked by plain rules, only the ads, trackers and pop-ups a
+! page pulls in. Hosts whose removal is known to break sites (tag managers, video ad SDK loaders,
+! login SDKs) are intentionally not listed.
+
+! --- Google ads ---
+||doubleclick.net^
+||googlesyndication.com^
+||googleadservices.com^
+||googletagservices.com^
+||adservice.google.com^
+||fundingchoicesmessages.google.com^
+||google-analytics.com^
+||2mdn.net^
+||admob.com^
+||google.com/pagead/
+||youtube.com/pagead/
+||youtube.com/api/stats/ads
+||youtube.com/ptracking
+||youtube.com/get_midroll_
+
+! --- Ad exchanges, SSPs and DSPs ---
+||adnxs.com^
+||adsrvr.org^
+||advertising.com^
+||amazon-adsystem.com^
+||criteo.com^
+||criteo.net^
+||casalemedia.com^
+||pubmatic.com^
+||rubiconproject.com^
+||openx.net^
+||indexww.com^
+||smartadserver.com^
+||yieldmo.com^
+||teads.tv^
+||sharethrough.com^
+||triplelift.com^
+||3lift.com^
+||sovrn.com^
+||lijit.com^
+||contextweb.com^
+||gumgum.com^
+||33across.com^
+||bidswitch.net^
+||adform.net^
+||adition.com^
+||adroll.com^
+||media.net^
+||yieldlab.net^
+||zedo.com^
+||undertone.com^
+||vidazoo.com^
+||primis.tech^
+||connatix.com^
+||spotxchange.com^
+||spotx.tv^
+||springserve.com^
+||innovid.com^
+||serving-sys.com^
+||flashtalking.com^
+||ads.yahoo.com^
+||ads.linkedin.com^
+||ads-twitter.com^
+||an.facebook.com^
+
+! --- Native / content recommendation ads ---
+||taboola.com^
+||outbrain.com^
+||revcontent.com^
+||mgid.com^
+||marketgid.com^
+||adskeeper.com^
+||adskeeper.co.uk^
+||zergnet.com^
+||lockerdome.com^
+||ntv.io^
+
+! --- Pop-up, pop-under and redirect ad networks ---
+||popads.net^
+||popcash.net^
+||propellerads.com^
+||adsterra.com^
+||exoclick.com^
+||juicyads.com^
+||trafficjunky.net^
+||hilltopads.net^
+||adcash.com^
+||clickadu.com^
+||onclickads.net^
+
+! --- Mobile / in-app ad SDK endpoints ---
+||adcolony.com^
+||applovin.com^
+||unityads.unity3d.com^
+||inmobi.com^
+||vungle.com^
+||chartboost.com^
+||mopub.com^
+
+! --- Ad verification and viewability beacons ---
+||moatads.com^
+||moatpixel.com^
+||doubleverify.com^
+||adsafeprotected.com^
+||adlightning.com^
+||confiant-integrations.net^
+
+! --- Ad-tech trackers and data brokers ---
+||scorecardresearch.com^
+||quantserve.com^
+||quantcount.com^
+||krxd.net^
+||bluekai.com^
+||demdex.net^
+||everesttech.net^
+||mathtag.com^
+||rlcdn.com^
+||agkn.com^
+||tapad.com^
+||crwdcntrl.net^
+||exelator.com^
+||eyeota.net^
+||bounceexchange.com^
+||adsymptotic.com^
+||analytics.yahoo.com^
+||jwpltx.com^
+
+! --- Session recording ---
+||hotjar.com^
+||hotjar.io^
+||clarity.ms^
+||mouseflow.com^
+||fullstory.com^
+
+! --- Regional ad networks ---
+||an.yandex.ru^
+||mc.yandex.ru^
+||adfox.ru^
+||yandexadexchange.net^
+||adriver.ru^
+||ad.mail.ru^
+||top-fwz1.mail.ru^
+||tns-counter.ru^
+||directadvert.ru^
+||relap.io^
+||smi2.ru^
+||smi2.net^
+
+! --- Pop-up and redirect ("jumping window") ad networks ---
+||popads.net^$popup,document
+||popcash.net^$popup,document
+||propellerads.com^$popup,document
+||adsterra.com^$popup,document
+||exoclick.com^$popup,document
+||juicyads.com^$popup,document
+||hilltopads.net^$popup,document
+||adcash.com^$popup,document
+||clickadu.com^$popup,document
+||onclickads.net^$popup,document
+||onclkds.com^$popup,document
+||popmyads.com^$popup,document
+||popunder.net^$popup,document
+||clickaine.com^$popup,document
+||admaven.com^$popup,document

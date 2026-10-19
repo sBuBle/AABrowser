@@ -21,6 +21,7 @@ import android.content.Context
 import android.view.View
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.web.releaseCompletely
+import com.kododake.aabrowser.web.setForegroundTab
 
 /**
  * Resets the active tab session by completely destroying the existing WebView instance
@@ -61,6 +62,7 @@ object TabSessionResetter {
         browserTabs[tabIndex] = newTab
 
         newTab.webView.visibility = View.VISIBLE
+        newTab.webView.setForegroundTab(true)
         newTab.webView.bringToFront()
         newTab.webView.requestFocus()
         newTab.webView.invalidate()

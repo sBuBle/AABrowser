@@ -45,6 +45,9 @@ object SettingsCallbacksFactory {
                     tab.webView.updateDrmL3Enforcer(enabled)
                 }
             },
+            onAdBlockerChanged = {
+                tabManager.updateAdBlocker(BrowserPreferences.isAdBlockerEnabled(activity))
+            },
             onUserAgentChanged = {
                 val profile = BrowserPreferences.getUserAgentProfile(activity)
                 val desktop = BrowserPreferences.shouldUseDesktopMode(activity)

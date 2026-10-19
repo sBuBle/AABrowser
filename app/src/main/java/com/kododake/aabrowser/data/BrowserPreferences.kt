@@ -127,7 +127,9 @@ object BrowserPreferences {
     fun addAllowedMicrophoneHost(context: Context, host: String) = SitePermissionPreferences.addAllowedMicrophoneHost(context, host)
     fun clearSavedSitePermissions(context: Context) = SitePermissionPreferences.clearSavedSitePermissions(context)
 
-    // --- Web Engine & DRM ---
+    // --- Web Engine, DRM & Ad Blocking ---
     fun isDrmL3EnforcerEnabled(context: Context): Boolean = WebPreferences.isDrmL3EnforcerEnabled(context)
     fun setDrmL3EnforcerEnabled(context: Context, enabled: Boolean) = WebPreferences.setDrmL3EnforcerEnabled(context, enabled)
+    fun isAdBlockerEnabled(context: Context): Boolean = WebPreferences.isAdBlockerEnabled(context)
+    fun setAdBlockerEnabled(context: Context, enabled: Boolean) = WebPreferences.setAdBlockerEnabled(context, enabled)
 }
