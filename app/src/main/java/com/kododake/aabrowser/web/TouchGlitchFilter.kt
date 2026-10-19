@@ -24,7 +24,8 @@ import kotlin.math.max
  * Filters out corrupt samples in single-finger touch gestures.
  *
  * Car head units relay touches to the phone at a low, uneven rate and some report stray points:
- * a sample that teleports far away, or a lift-off reported back near where the finger started.
+ * a sample that teleports far away, a sample that repeats an earlier timestamp, or a lift-off
+ * reported back near where the finger started.
  * WebView turns such a point into a huge fling in the opposite direction, so scrolling down with
  * a finger suddenly throws the page back to the top. Real fingers cannot move faster than the
  * platform's maximum fling velocity, do not leap back over most of the distance they just
@@ -64,7 +65,8 @@ class TouchGlitchFilter(
     /** Returns false when this move sample is a glitch and should not reach the page. */
     fun acceptMove(x: Float, y: Float, time: Long): Boolean {
         if (!tracking) return true
-        if (droppedInARow < MAX_DROPPED_IN_A_ROW && (isTooFast(x, y, time) || isSnapBack(x, y))) {
+        val isGlitch = isOutOfOrder(x, y, time) || isTooFast(x, y, time) || isSnapBack(x, y)
+        if (isGlitch && droppedInARow < MAX_DROPPED_IN_A_ROW) {
             droppedInARow++
             return false
         }
@@ -86,6 +88,10 @@ class TouchGlitchFilter(
         val movesBackwards = dx * (lastX - downX) + dy * (lastY - downY) < 0f
         return if (movesBackwards || isTooFast(x, y, time)) lastX to lastY else null
     }
+
+    /** A new position stamped no later than the previous sample would read as infinite speed. */
+    private fun isOutOfOrder(x: Float, y: Float, time: Long): Boolean =
+        time <= lastTime && (x != lastX || y != lastY)
 
     private fun isTooFast(x: Float, y: Float, time: Long): Boolean {
         val distance = hypot(x - lastX, y - lastY)

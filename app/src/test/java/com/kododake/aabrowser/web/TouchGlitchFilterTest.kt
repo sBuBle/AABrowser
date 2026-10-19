@@ -99,4 +99,12 @@ class TouchGlitchFilterTest {
         assertTrue(filter.acceptMove(100f, 430f, time + 32))
         assertTrue(filter.acceptMove(100f, 460f, time + 48))
     }
+
+    @Test
+    fun sampleRepeatingPreviousTimestampIsDropped() {
+        val filter = filter()
+        val time = filter.scrollDown()
+        assertFalse(filter.acceptMove(100f, 380f, time))
+        assertTrue(filter.acceptMove(100f, 380f, time + 16))
+    }
 }

@@ -20,6 +20,7 @@ package com.kododake.aabrowser.tabs
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -28,6 +29,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.web.BrowserCallbacks
+import com.kododake.aabrowser.web.ScrollJumpGuard
 import com.kododake.aabrowser.web.SpeechRecognitionBridge
 import com.kododake.aabrowser.web.TouchGlitchFilter
 import com.kododake.aabrowser.web.configureWebView
@@ -80,17 +82,40 @@ object BrowserTabFactory {
         setupWebMessageListener(tabView, speechBridge)
         setupJavascriptInterface(context, tabView, onSanitizeJsExternalUrl, onOpenUriExternally)
 
-        val touchFilter = createTouchGlitchFilter(context)
-        tabView.setOnTouchListener { _, event ->
+        setupTouchStabilization(context, tabView, onShowMenuButtonTemporarily)
+        tabView.onPause()
+
+        return tab
+    }
+
+    /**
+     * Cleans up the touch stream car head units deliver (see [TouchGlitchFilter]) and undoes a
+     * page that still leaps backwards as the finger lifts after a scroll (see [ScrollJumpGuard]).
+     */
+    private fun setupTouchStabilization(
+        context: Context,
+        webView: android.webkit.WebView,
+        onShowMenuButtonTemporarily: () -> Unit
+    ) {
+        val config = ViewConfiguration.get(context)
+        val touchSlop = config.scaledTouchSlop
+        val touchFilter = TouchGlitchFilter(
+            maxSpeedPxPerMs = config.scaledMaximumFlingVelocity * 2f / 1000f,
+            minGlitchDistancePx = touchSlop * 4f
+        )
+        val jumpGuard = ScrollJumpGuard()
+
+        webView.setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     // Only react to the start of a gesture: doing this for every move event
                     // re-posted the menu button timers and recomposed it while scrolling.
                     onShowMenuButtonTemporarily()
                     touchFilter.onDown(event.x, event.y, event.eventTime)
+                    jumpGuard.onTouchDown(view.scrollY)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (event.pointerCount == 1 && !touchFilter.acceptMove(event.x, event.y, event.eventTime)) {
+                    if (event.pointerCount == 1 && !acceptMoveSamples(touchFilter, event)) {
                         return@setOnTouchListener true
                     }
                 }
@@ -98,23 +123,34 @@ object BrowserTabFactory {
                     touchFilter.resolveUp(event.x, event.y, event.eventTime)?.let { (x, y) ->
                         event.setLocation(x, y)
                     }
+                    jumpGuard.onGestureEnd(view.scrollY, event.eventTime, view.height, touchSlop)
                 }
-                MotionEvent.ACTION_POINTER_DOWN,
-                MotionEvent.ACTION_CANCEL -> touchFilter.reset()
+                MotionEvent.ACTION_POINTER_DOWN -> touchFilter.reset()
+                MotionEvent.ACTION_CANCEL -> {
+                    touchFilter.reset()
+                    jumpGuard.onGestureEnd(view.scrollY, event.eventTime, view.height, touchSlop)
+                }
             }
             false
         }
-        tabView.onPause()
 
-        return tab
+        webView.setOnScrollChangeListener { _, scrollX, scrollY, _, _ ->
+            jumpGuard.onScrollChanged(scrollY, SystemClock.uptimeMillis())?.let { restoreY ->
+                // Stop the bogus fling first so it does not keep dragging the page away.
+                webView.flingScroll(0, 0)
+                webView.scrollTo(scrollX, restoreY)
+            }
+        }
     }
 
-    private fun createTouchGlitchFilter(context: Context): TouchGlitchFilter {
-        val config = ViewConfiguration.get(context)
-        return TouchGlitchFilter(
-            maxSpeedPxPerMs = config.scaledMaximumFlingVelocity * 2f / 1000f,
-            minGlitchDistancePx = config.scaledTouchSlop * 4f
-        )
+    /** Batched move events carry earlier samples too; a glitch hidden among them also counts. */
+    private fun acceptMoveSamples(filter: TouchGlitchFilter, event: MotionEvent): Boolean {
+        for (i in 0 until event.historySize) {
+            if (!filter.acceptMove(event.getHistoricalX(i), event.getHistoricalY(i), event.getHistoricalEventTime(i))) {
+                return false
+            }
+        }
+        return filter.acceptMove(event.x, event.y, event.eventTime)
     }
 
     private fun setupWebMessageListener(webView: android.webkit.WebView, speechBridge: SpeechRecognitionBridge) {
