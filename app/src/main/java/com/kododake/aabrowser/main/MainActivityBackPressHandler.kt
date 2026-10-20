@@ -45,8 +45,13 @@ object MainActivityBackPressHandler {
                     startPageManager.isShowingStartPage && getCurrentUrl().isNotBlank() -> onHideStartPage()
                     tabManager.activeTab?.webView?.canGoBack() == true -> tabManager.activeTab?.webView?.goBack()
                     else -> {
+                        // Let the system handle this one back (leave the app), then take back
+                        // over: on Android 12+ the activity survives in the background, and a
+                        // callback left disabled would make every later back gesture leave the
+                        // app instead of going back in the page.
                         isEnabled = false
                         activity.onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
                     }
                 }
                 onNavigationButtonsUpdateNeeded()

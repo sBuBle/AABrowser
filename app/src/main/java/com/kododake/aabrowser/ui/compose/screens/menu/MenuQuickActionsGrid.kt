@@ -24,6 +24,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +53,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,7 +70,8 @@ fun MenuQuickActionsGrid(
     onHome: () -> Unit,
     onTabs: () -> Unit,
     onNewTab: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -85,7 +88,8 @@ fun MenuQuickActionsGrid(
                 topStart = 24.dp,
                 topEnd = 6.dp,
                 bottomEnd = 6.dp,
-                bottomStart = 6.dp
+                bottomStart = 6.dp,
+                compact = compact
             )
             M3EGridButton(
                 icon = Icons.Rounded.QrCode2,
@@ -95,7 +99,8 @@ fun MenuQuickActionsGrid(
                 topStart = 6.dp,
                 topEnd = 6.dp,
                 bottomEnd = 6.dp,
-                bottomStart = 6.dp
+                bottomStart = 6.dp,
+                compact = compact
             )
             M3EGridButton(
                 icon = Icons.Rounded.Settings,
@@ -104,7 +109,8 @@ fun MenuQuickActionsGrid(
                 topStart = 6.dp,
                 topEnd = 24.dp,
                 bottomEnd = 6.dp,
-                bottomStart = 6.dp
+                bottomStart = 6.dp,
+                compact = compact
             )
         }
 
@@ -119,7 +125,8 @@ fun MenuQuickActionsGrid(
                 topStart = 6.dp,
                 topEnd = 6.dp,
                 bottomEnd = 6.dp,
-                bottomStart = 24.dp
+                bottomStart = 24.dp,
+                compact = compact
             )
             M3EGridButton(
                 icon = Icons.Rounded.Tab,
@@ -128,7 +135,8 @@ fun MenuQuickActionsGrid(
                 topStart = 6.dp,
                 topEnd = 6.dp,
                 bottomEnd = 6.dp,
-                bottomStart = 6.dp
+                bottomStart = 6.dp,
+                compact = compact
             )
             M3EGridButton(
                 icon = Icons.Rounded.Add,
@@ -137,7 +145,8 @@ fun MenuQuickActionsGrid(
                 topStart = 6.dp,
                 topEnd = 6.dp,
                 bottomEnd = 24.dp,
-                bottomStart = 6.dp
+                bottomStart = 6.dp,
+                compact = compact
             )
         }
     }
@@ -152,7 +161,8 @@ private fun RowScope.M3EGridButton(
     topEnd: Dp,
     bottomEnd: Dp,
     bottomStart: Dp,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    compact: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -201,6 +211,7 @@ private fun RowScope.M3EGridButton(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (enabled) 0.25f else 0.12f)
         ),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = if (compact) 4.dp else 8.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = containerColor,
             contentColor = MaterialTheme.colorScheme.onSurface
@@ -213,7 +224,7 @@ private fun RowScope.M3EGridButton(
         ),
         modifier = Modifier
             .weight(1f)
-            .height(72.dp)
+            .height(if (compact) 56.dp else 72.dp)
             .then(
                 if (enabled) Modifier.bouncyClickable(
                     interactionSource = interactionSource,
@@ -222,23 +233,31 @@ private fun RowScope.M3EGridButton(
                 ) else Modifier
             )
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        val iconContent: @Composable () -> Unit = {
             Icon(
                 imageVector = icon,
-                contentDescription = label,
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha),
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(if (compact) 20.dp else 22.dp)
             )
-            Spacer(Modifier.height(4.dp))
+        }
+        val labelContent: @Composable () -> Unit = {
             Text(
                 text = label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
             )
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            iconContent()
+            Spacer(Modifier.height(if (compact) 2.dp else 4.dp))
+            labelContent()
         }
     }
 }

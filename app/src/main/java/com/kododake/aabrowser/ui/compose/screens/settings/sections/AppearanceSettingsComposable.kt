@@ -63,7 +63,7 @@ fun AppearanceSettingsComposable(
             AppThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
         }
         ExpressiveListItem(
-            headline = stringResource(R.string.settings_appearance),
+            headline = stringResource(R.string.settings_theme),
             supportingText = themeSubtitle,
             leadingIcon = Icons.Rounded.Palette,
             position = ListGroupPosition.Single,
@@ -73,7 +73,7 @@ fun AppearanceSettingsComposable(
 
     if (showThemeDialog) {
         ExpressiveSingleChoiceDialog(
-            title = stringResource(R.string.settings_appearance),
+            title = stringResource(R.string.settings_theme),
             items = AppThemeMode.entries,
             selectedItem = currentThemeMode,
             onItemSelected = { mode ->

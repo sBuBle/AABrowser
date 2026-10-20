@@ -22,6 +22,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -57,7 +58,8 @@ fun MenuNavigationRow(
     onBack: () -> Unit,
     onForward: () -> Unit,
     onReload: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    buttonHeight: Dp = 64.dp
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -71,7 +73,8 @@ fun MenuNavigationRow(
             topStart = 24.dp,
             topEnd = 8.dp,
             bottomEnd = 8.dp,
-            bottomStart = 24.dp
+            bottomStart = 24.dp,
+            height = buttonHeight
         )
         MenuNavigationButton(
             icon = Icons.AutoMirrored.Rounded.ArrowForward,
@@ -81,7 +84,8 @@ fun MenuNavigationRow(
             topStart = 8.dp,
             topEnd = 8.dp,
             bottomEnd = 8.dp,
-            bottomStart = 8.dp
+            bottomStart = 8.dp,
+            height = buttonHeight
         )
         MenuNavigationButton(
             icon = Icons.Rounded.Refresh,
@@ -91,7 +95,8 @@ fun MenuNavigationRow(
             topStart = 8.dp,
             topEnd = 24.dp,
             bottomEnd = 24.dp,
-            bottomStart = 8.dp
+            bottomStart = 8.dp,
+            height = buttonHeight
         )
     }
 }
@@ -105,7 +110,8 @@ private fun RowScope.MenuNavigationButton(
     topStart: Dp,
     topEnd: Dp,
     bottomEnd: Dp,
-    bottomStart: Dp
+    bottomStart: Dp,
+    height: Dp
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -151,6 +157,7 @@ private fun RowScope.MenuNavigationButton(
         shape = shape,
         interactionSource = interactionSource,
         border = null,
+        contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = containerColor,
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -166,7 +173,7 @@ private fun RowScope.MenuNavigationButton(
         ),
         modifier = Modifier
             .weight(1f)
-            .height(64.dp)
+            .height(height)
             .bouncyClickable(
                 interactionSource = interactionSource,
                 enabled = enabled,

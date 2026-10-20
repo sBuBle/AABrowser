@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import com.google.android.material.snackbar.Snackbar
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.databinding.ActivityMainBinding
@@ -145,11 +146,20 @@ class BookmarkManager(
     }
 
     fun removeBookmark(url: String) {
+        // The delete button is one tap away from the pin, easy to hit on a moving car screen.
+        val entriesBefore = BrowserPreferences.getBookmarkEntries(activity)
+        val slotsBefore = BrowserPreferences.getStartPageSlots(activity)
         if (BrowserPreferences.removeBookmark(activity, url)) {
-            val message = activity.getString(R.string.bookmark_removed)
-            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
             refreshBookmarks()
             callbacks.onRefreshStartPage()
+            Snackbar.make(binding.root, R.string.bookmark_removed, Snackbar.LENGTH_LONG)
+                .setAction(R.string.undo) {
+                    BrowserPreferences.setBookmarkEntries(activity, entriesBefore)
+                    BrowserPreferences.setStartPageSlots(activity, slotsBefore)
+                    refreshBookmarks()
+                    callbacks.onRefreshStartPage()
+                }
+                .show()
         }
     }
 

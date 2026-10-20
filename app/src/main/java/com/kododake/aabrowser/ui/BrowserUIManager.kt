@@ -97,11 +97,16 @@ class BrowserUIManager(
 
     /**
      * Shows the bottom toolbar on the phone (unless turned off in settings) and makes room for it
-     * below the page. The car display, full screen and video keep the floating menu button.
+     * below the page. The car display, a phone in landscape, full screen and video keep the
+     * floating menu button: on a short screen the toolbar would take a sixth of the page.
      */
     fun updateBottomToolbar() {
+        val configuration = activity.resources.configuration
+        val isShortLandscape = configuration.screenWidthDp > configuration.screenHeightDp &&
+            configuration.screenHeightDp < SHORT_SCREEN_MAX_HEIGHT_DP
         val visible = BrowserPreferences.isBottomToolbarEnabled(activity) &&
             !BrowserLayout.isCarDisplay(binding.root) &&
+            !isShortLandscape &&
             !isInFullscreen() &&
             !isImmersiveMode() &&
             !isKeyboardVisible
@@ -290,3 +295,5 @@ class BrowserUIManager(
         return if (scheme == "http" || scheme == "https") parsed else null
     }
 }
+
+private const val SHORT_SCREEN_MAX_HEIGHT_DP = 480

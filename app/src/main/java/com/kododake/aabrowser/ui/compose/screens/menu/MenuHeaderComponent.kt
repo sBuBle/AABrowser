@@ -28,6 +28,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.components.LocalSheetDragModifier
@@ -64,7 +66,9 @@ import com.kododake.aabrowser.ui.compose.components.bouncyClickable
 fun MenuHeaderComponent(
     pageTitle: String,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    height: Dp = 70.dp,
+    trailing: (@Composable RowScope.() -> Unit)? = null
 ) {
     val containerColor = if (androidx.compose.foundation.isSystemInDarkTheme()) {
         MaterialTheme.colorScheme.surfaceContainerHigh
@@ -84,7 +88,7 @@ fun MenuHeaderComponent(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(70.dp)
+            .height(height)
             .then(LocalSheetDragModifier.current)
     ) {
             Row(
@@ -120,6 +124,8 @@ fun MenuHeaderComponent(
                         )
                     }
                 }
+
+                trailing?.invoke(this)
 
                 val closeShape = RoundedCornerShape(
                     topStart = 0.dp,

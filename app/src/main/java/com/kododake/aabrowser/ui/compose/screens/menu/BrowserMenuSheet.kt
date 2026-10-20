@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -63,27 +64,50 @@ fun BrowserMenuSheet(
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MenuHeaderComponent(
-                pageTitle = stateHolder.pageTitle,
-                onClose = actions.onClose
-            )
-
             if (layout.isWideAndShort) {
-                // Car displays and phones in landscape: side by side, so the menu fits without scrolling.
-                Spacer(Modifier.height(4.dp))
+                // Car displays and phones in landscape: a slim header that also holds back/forward/
+                // reload and the footer's buttons, and compact shortcuts side by side with the page
+                // switches, so the whole menu fits a short screen without scrolling.
+                MenuHeaderComponent(
+                    pageTitle = stateHolder.pageTitle,
+                    onClose = actions.onClose,
+                    height = 64.dp,
+                    trailing = {
+                        MenuNavigationRow(
+                            canGoBack = stateHolder.canGoBack,
+                            canGoForward = stateHolder.canGoForward,
+                            canReload = stateHolder.canReload,
+                            onBack = actions.onBack,
+                            onForward = actions.onForward,
+                            onReload = actions.onReload,
+                            modifier = Modifier.width(180.dp),
+                            buttonHeight = 52.dp
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        MenuUpdateButtons(onCheckUpdate = actions.onCheckUpdate, onGitHub = actions.onGitHub)
+                        Spacer(Modifier.width(4.dp))
+                    }
+                )
+
+                Spacer(Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        MenuBrowsingControls(stateHolder, actions)
+                        MenuBrowsingControls(stateHolder, actions, compact = true)
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        MenuPageOptions(stateHolder, actions)
+                        MenuPageOptions(stateHolder, actions, showFooter = false)
                     }
                 }
             } else {
+                MenuHeaderComponent(
+                    pageTitle = stateHolder.pageTitle,
+                    onClose = actions.onClose
+                )
+
                 Spacer(Modifier.height(12.dp))
 
                 MenuBrowsingControls(stateHolder, actions)
@@ -100,27 +124,37 @@ fun BrowserMenuSheet(
 
 /** Address bar, back/forward/reload and the shortcuts grid. */
 @Composable
-private fun MenuBrowsingControls(stateHolder: MenuStateHolder, actions: MenuActions) {
-    MenuAddressBar(
-        url = stateHolder.url,
-        onNavigate = actions.onNavigate,
-        focusRequestKey = stateHolder.addressFocusRequest
-    )
+private fun MenuBrowsingControls(stateHolder: MenuStateHolder, actions: MenuActions, compact: Boolean = false) {
+    if (compact) {
+        // Back/forward/reload are in the header on short screens.
+        MenuAddressBar(
+            url = stateHolder.url,
+            onNavigate = actions.onNavigate,
+            focusRequestKey = stateHolder.addressFocusRequest
+        )
+    } else {
+        MenuAddressBar(
+            url = stateHolder.url,
+            onNavigate = actions.onNavigate,
+            focusRequestKey = stateHolder.addressFocusRequest
+        )
 
-    Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-    MenuNavigationRow(
-        canGoBack = stateHolder.canGoBack,
-        canGoForward = stateHolder.canGoForward,
-        canReload = stateHolder.canReload,
-        onBack = actions.onBack,
-        onForward = actions.onForward,
-        onReload = actions.onReload
-    )
+        MenuNavigationRow(
+            canGoBack = stateHolder.canGoBack,
+            canGoForward = stateHolder.canGoForward,
+            canReload = stateHolder.canReload,
+            onBack = actions.onBack,
+            onForward = actions.onForward,
+            onReload = actions.onReload
+        )
+    }
 
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
 
     MenuQuickActionsGrid(
+        compact = compact,
         onBookmarks = actions.onBookmarks,
         onQrCode = actions.onQrCode,
         canQrCode = stateHolder.canQrCode,
@@ -133,7 +167,7 @@ private fun MenuBrowsingControls(stateHolder: MenuStateHolder, actions: MenuActi
 
 /** Page switches (desktop site, full screen, ad blocker) and the footer. */
 @Composable
-private fun MenuPageOptions(stateHolder: MenuStateHolder, actions: MenuActions) {
+private fun MenuPageOptions(stateHolder: MenuStateHolder, actions: MenuActions, showFooter: Boolean = true) {
     MenuDesktopSwitchCard(
         isDesktopMode = stateHolder.isDesktopMode,
         onDesktopToggle = actions.onDesktopToggle
@@ -157,6 +191,8 @@ private fun MenuPageOptions(stateHolder: MenuStateHolder, actions: MenuActions) 
             onAdBlockToggle = actions.onAdBlockToggle
         )
     }
+
+    if (!showFooter) return
 
     Spacer(Modifier.height(4.dp))
 

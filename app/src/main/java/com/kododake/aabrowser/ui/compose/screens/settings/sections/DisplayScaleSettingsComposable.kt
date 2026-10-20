@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +42,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.ui.compose.components.ExpressiveSlider
@@ -86,9 +89,9 @@ fun DisplayScaleSettingsComposable(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.settings_display_scale),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = stringResource(R.string.settings_display_scale_description),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
@@ -117,7 +120,7 @@ fun DisplayScaleSettingsComposable(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(85, 100, 115, 130, 150).forEach { preset ->
                         val isSelected = scalePercent == preset
@@ -128,7 +131,19 @@ fun DisplayScaleSettingsComposable(
                                 BrowserPreferences.setGlobalScalePercent(context, preset)
                                 onScaleChanged()
                             },
-                            label = { Text(stringResource(R.string.settings_scale_option, preset)) },
+                            // Equal widths, one line, shrinking to fit: with large system fonts
+                            // "150%" used to break into "15" and "0%".
+                            label = {
+                                Text(
+                                    text = stringResource(R.string.settings_scale_option, preset),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    textAlign = TextAlign.Center,
+                                    autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
                             colors = FilterChipDefaults.filterChipColors(
                                 containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
                                 labelColor = MaterialTheme.colorScheme.onSurface,
