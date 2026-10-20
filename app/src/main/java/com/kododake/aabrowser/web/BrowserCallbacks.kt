@@ -43,6 +43,10 @@ data class BrowserCallbacks(
     val onCreateNewWindow: () -> android.webkit.WebView? = { null },
     val onPopupBlocked: () -> Unit = {},
     val onAdRedirectBlocked: () -> Unit = {},
+    /** A page tried to send the tab to [targetUrl] on another site without a tap on a link. */
+    val onRedirectBlocked: (pageUrl: String?, targetUrl: String) -> Unit = { _, _ -> },
+    /** A page tried to open a window without a tap on a link. */
+    val onPopupWindowBlocked: (openerUrl: String?) -> Unit = {},
     /** The number of ads blocked on the current page changed; called on the main thread. */
     val onAdsBlockedChanged: (Int) -> Unit = {},
     val onRenderProcessGone: (Boolean) -> Unit = {}

@@ -49,12 +49,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.theme.ExpressiveTypography
 
-/** Lists the sites the ad blocker is turned off for, each with a button to block ads there again. */
+/** Lists the sites with an exception (ads or pop-ups allowed), each with a button to remove it. */
 @Composable
-fun AdBlockAllowedSitesDialog(
+fun AllowedSitesDialog(
+    title: String,
+    emptyText: String,
+    removeDescription: (site: String) -> String,
     sites: List<String>,
     onRemoveSite: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -94,7 +96,7 @@ fun AdBlockAllowedSitesDialog(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = stringResource(R.string.settings_ad_block_allowed_sites),
+                        text = title,
                         style = ExpressiveTypography.titleLargeEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -110,7 +112,7 @@ fun AdBlockAllowedSitesDialog(
                 ) {
                     if (sites.isEmpty()) {
                         Text(
-                            text = stringResource(R.string.settings_ad_block_allowed_sites_empty),
+                            text = emptyText,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -138,7 +140,7 @@ fun AdBlockAllowedSitesDialog(
                             IconButton(onClick = { onRemoveSite(site) }) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
-                                    contentDescription = stringResource(R.string.settings_ad_block_allowed_site_remove, site)
+                                    contentDescription = removeDescription(site)
                                 )
                             }
                         }

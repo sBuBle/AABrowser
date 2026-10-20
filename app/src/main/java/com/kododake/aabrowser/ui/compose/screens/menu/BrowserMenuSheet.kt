@@ -17,7 +17,9 @@
 
 package com.kododake.aabrowser.ui.compose.screens.menu
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,10 +30,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
-import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.components.ExpressiveBottomSheetContainer
+import com.kododake.aabrowser.ui.compose.components.rememberBrowserLayout
 
 @Composable
 fun BrowserMenuSheet(
@@ -52,12 +53,12 @@ fun BrowserMenuSheet(
         isReturning = isReturning,
         modifier = modifier
     ) {
-        val maxHeight = dimensionResource(R.dimen.menu_max_height)
+        val layout = rememberBrowserLayout()
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = maxHeight)
+                .heightIn(max = layout.screenHeight * 0.92f)
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -67,71 +68,101 @@ fun BrowserMenuSheet(
                 onClose = actions.onClose
             )
 
-            Spacer(Modifier.height(12.dp))
+            if (layout.isWideAndShort) {
+                // Car displays and phones in landscape: side by side, so the menu fits without scrolling.
+                Spacer(Modifier.height(4.dp))
 
-            MenuAddressBar(
-                url = stateHolder.url,
-                onNavigate = actions.onNavigate
-            )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        MenuBrowsingControls(stateHolder, actions)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        MenuPageOptions(stateHolder, actions)
+                    }
+                }
+            } else {
+                Spacer(Modifier.height(12.dp))
 
-            Spacer(Modifier.height(12.dp))
+                MenuBrowsingControls(stateHolder, actions)
 
-            MenuNavigationRow(
-                canGoBack = stateHolder.canGoBack,
-                canGoForward = stateHolder.canGoForward,
-                canReload = stateHolder.canReload,
-                onBack = actions.onBack,
-                onForward = actions.onForward,
-                onReload = actions.onReload
-            )
+                Spacer(Modifier.height(10.dp))
 
-            Spacer(Modifier.height(10.dp))
-
-            MenuQuickActionsGrid(
-                onBookmarks = actions.onBookmarks,
-                onQrCode = actions.onQrCode,
-                canQrCode = stateHolder.canQrCode,
-                onSettings = actions.onSettings,
-                onHome = actions.onHome,
-                onTabs = actions.onTabs,
-                onNewTab = actions.onNewTab
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            MenuDesktopSwitchCard(
-                isDesktopMode = stateHolder.isDesktopMode,
-                onDesktopToggle = actions.onDesktopToggle
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            MenuFullscreenSwitchCard(
-                isFullscreenMode = stateHolder.isFullscreenMode,
-                onFullscreenToggle = actions.onFullscreenToggle
-            )
-
-            stateHolder.adBlockSite?.let { site ->
-                Spacer(Modifier.height(8.dp))
-
-                MenuAdBlockSwitchCard(
-                    site = site,
-                    isAdBlockerEnabled = stateHolder.isAdBlockerEnabled,
-                    isActiveOnSite = stateHolder.isAdBlockActiveOnSite,
-                    blockedCount = stateHolder.adsBlockedCount,
-                    onAdBlockToggle = actions.onAdBlockToggle
-                )
+                MenuPageOptions(stateHolder, actions)
             }
-
-            Spacer(Modifier.height(4.dp))
-
-            MenuFooter(
-                versionName = stateHolder.versionName,
-                onCheckUpdate = actions.onCheckUpdate,
-                onGitHub = actions.onGitHub
-            )
 
             Spacer(Modifier.height(16.dp))
         }
     }
+}
+
+/** Address bar, back/forward/reload and the shortcuts grid. */
+@Composable
+private fun MenuBrowsingControls(stateHolder: MenuStateHolder, actions: MenuActions) {
+    MenuAddressBar(
+        url = stateHolder.url,
+        onNavigate = actions.onNavigate,
+        focusRequestKey = stateHolder.addressFocusRequest
+    )
+
+    Spacer(Modifier.height(12.dp))
+
+    MenuNavigationRow(
+        canGoBack = stateHolder.canGoBack,
+        canGoForward = stateHolder.canGoForward,
+        canReload = stateHolder.canReload,
+        onBack = actions.onBack,
+        onForward = actions.onForward,
+        onReload = actions.onReload
+    )
+
+    Spacer(Modifier.height(10.dp))
+
+    MenuQuickActionsGrid(
+        onBookmarks = actions.onBookmarks,
+        onQrCode = actions.onQrCode,
+        canQrCode = stateHolder.canQrCode,
+        onSettings = actions.onSettings,
+        onHome = actions.onHome,
+        onTabs = actions.onTabs,
+        onNewTab = actions.onNewTab
+    )
+}
+
+/** Page switches (desktop site, full screen, ad blocker) and the footer. */
+@Composable
+private fun MenuPageOptions(stateHolder: MenuStateHolder, actions: MenuActions) {
+    MenuDesktopSwitchCard(
+        isDesktopMode = stateHolder.isDesktopMode,
+        onDesktopToggle = actions.onDesktopToggle
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    MenuFullscreenSwitchCard(
+        isFullscreenMode = stateHolder.isFullscreenMode,
+        onFullscreenToggle = actions.onFullscreenToggle
+    )
+
+    stateHolder.adBlockSite?.let { site ->
+        Spacer(Modifier.height(8.dp))
+
+        MenuAdBlockSwitchCard(
+            site = site,
+            isAdBlockerEnabled = stateHolder.isAdBlockerEnabled,
+            isActiveOnSite = stateHolder.isAdBlockActiveOnSite,
+            blockedCount = stateHolder.adsBlockedCount,
+            onAdBlockToggle = actions.onAdBlockToggle
+        )
+    }
+
+    Spacer(Modifier.height(4.dp))
+
+    MenuFooter(
+        versionName = stateHolder.versionName,
+        onCheckUpdate = actions.onCheckUpdate,
+        onGitHub = actions.onGitHub
+    )
 }

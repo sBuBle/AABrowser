@@ -20,6 +20,7 @@ package com.kododake.aabrowser
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.webkit.WebView
@@ -152,6 +153,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         syncUserAgentProfile()
         syncAdBlocker()
         managers.uiManager.applyQuickActionButtonPreferences()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The activity handles rotation and display changes itself; the toolbar depends on both.
+        managers.uiManager.updateBottomToolbar()
     }
 
     override fun onPause() {

@@ -79,6 +79,8 @@ object BrowserPreferences {
     fun setQuickActionButtonMode(context: Context, mode: QuickActionButtonMode) = UIPreferences.setQuickActionButtonMode(context, mode)
     fun isQuickActionButtonAlwaysVisible(context: Context): Boolean = UIPreferences.isQuickActionButtonAlwaysVisible(context)
     fun setQuickActionButtonAlwaysVisible(context: Context, enabled: Boolean) = UIPreferences.setQuickActionButtonAlwaysVisible(context, enabled)
+    fun isBottomToolbarEnabled(context: Context): Boolean = UIPreferences.isBottomToolbarEnabled(context)
+    fun setBottomToolbarEnabled(context: Context, enabled: Boolean) = UIPreferences.setBottomToolbarEnabled(context, enabled)
     fun getQuickActionButtonPosition(context: Context): QuickActionButtonPosition = UIPreferences.getQuickActionButtonPosition(context)
     fun setQuickActionButtonPosition(context: Context, position: QuickActionButtonPosition) = UIPreferences.setQuickActionButtonPosition(context, position)
     fun shouldHideSponsors(context: Context): Boolean = UIPreferences.shouldHideSponsors(context)
@@ -134,4 +136,8 @@ object BrowserPreferences {
     fun setAdBlockerEnabled(context: Context, enabled: Boolean) = WebPreferences.setAdBlockerEnabled(context, enabled)
     fun getAdBlockAllowedSites(context: Context): Set<String> = WebPreferences.getAdBlockAllowedSites(context)
     fun setAdBlockAllowedSites(context: Context, sites: Set<String>) = WebPreferences.setAdBlockAllowedSites(context, sites)
+    fun isRedirectBlockingEnabled(context: Context): Boolean = WebPreferences.isRedirectBlockingEnabled(context)
+    fun setRedirectBlockingEnabled(context: Context, enabled: Boolean) = WebPreferences.setRedirectBlockingEnabled(context, enabled)
+    fun getRedirectAllowedSites(context: Context): Set<String> = WebPreferences.getRedirectAllowedSites(context)
+    fun setRedirectAllowedSites(context: Context, sites: Set<String>) = WebPreferences.setRedirectAllowedSites(context, sites)
 }

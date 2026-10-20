@@ -32,6 +32,7 @@ import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.navigation.NavigationManager
 import com.kododake.aabrowser.startpage.StartPageManager
 import com.kododake.aabrowser.tabs.TabManager
+import com.kododake.aabrowser.ui.compose.screens.toolbar.ToolbarActions
 import com.kododake.aabrowser.web.AdBlocker
 
 class MainActivitySetup(
@@ -187,6 +188,15 @@ class MainActivitySetup(
             }
         )
         managers.uiManager.menuHelper.setup(binding.menuComposeView, menuActions)
+        managers.uiManager.setupBottomToolbar(
+            ToolbarActions(
+                onBack = menuActions.onBack,
+                onForward = menuActions.onForward,
+                onAddress = { managers.overlayCoordinator.showMenu(focusAddressBar = true) },
+                onTabs = { managers.overlayCoordinator.openTabs(fromMenu = false) },
+                onMenu = { managers.overlayCoordinator.showMenu() }
+            )
+        )
         managers.uiManager.menuHelper.setupFab(binding.fabComposeView) {
             actions.handleQuickActionButtonPressed()
         }

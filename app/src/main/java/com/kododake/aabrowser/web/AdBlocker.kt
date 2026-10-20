@@ -18,7 +18,7 @@
 package com.kododake.aabrowser.web
 
 import android.content.Context
-import android.net.Uri
+
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -28,6 +28,7 @@ import android.webkit.WebResourceResponse
 import com.kododake.aabrowser.adblock.FilterEngine
 import com.kododake.aabrowser.adblock.FilterListManager
 import com.kododake.aabrowser.data.BrowserPreferences
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.Executors
@@ -52,10 +53,11 @@ object AdBlocker {
     var isEnabled: Boolean = true
         private set
 
-    /** Sites the user turned the ad blocker off for, see [siteOf]. */
-    @Volatile
-    var allowedSites: Set<String> = emptySet()
-        private set
+    /** Sites the user turned the ad blocker off for. */
+    private val allowedSites = SiteExceptionList(
+        BrowserPreferences::getAdBlockAllowedSites,
+        BrowserPreferences::setAdBlockAllowedSites
+    )
 
     @Volatile
     private var initialized = false
@@ -73,7 +75,8 @@ object AdBlocker {
         synchronized(this) {
             if (initialized) return
             isEnabled = BrowserPreferences.isAdBlockerEnabled(appContext)
-            allowedSites = BrowserPreferences.getAdBlockAllowedSites(appContext)
+            allowedSites.load(appContext)
+            RedirectBlocker.initialize(appContext)
             initialized = true
         }
         worker.execute {
@@ -90,33 +93,17 @@ object AdBlocker {
         isEnabled = enabled
     }
 
-    /** The key used for per-site exceptions: the page's host without `www.`, or null for non-web pages. */
-    fun siteOf(pageUrl: String?): String? {
-        if (pageUrl.isNullOrEmpty()) return null
-        val uri = Uri.parse(pageUrl)
-        val scheme = uri.scheme?.lowercase()
-        if (scheme != "http" && scheme != "https") return null
-        return uri.host?.lowercase()?.removePrefix("www.")?.takeIf { it.isNotEmpty() }
-    }
+    /** The key used for per-site exceptions, see [SiteExceptionList.siteOf]. */
+    fun siteOf(pageUrl: String?): String? = SiteExceptionList.siteOf(pageUrl)
 
     /** Whether the user turned the ad blocker off for the site of [pageUrl] (or a parent domain of it). */
-    fun isAllowedSite(pageUrl: String?): Boolean {
-        val sites = allowedSites
-        if (sites.isEmpty()) return false
-        val host = siteOf(pageUrl) ?: return false
-        return sites.any { site -> host == site || host.endsWith(".$site") }
-    }
+    fun isAllowedSite(pageUrl: String?): Boolean = allowedSites.contains(pageUrl)
 
     /** Whether ads are blocked on [pageUrl]: the ad blocker is on and the site is not an exception. */
     fun isActiveFor(pageUrl: String?): Boolean = isEnabled && !isAllowedSite(pageUrl)
 
-    fun setSiteAllowed(context: Context, site: String, allowed: Boolean) {
-        // Read from preferences: settings can be opened before any WebView initialized the blocker.
-        val current = BrowserPreferences.getAdBlockAllowedSites(context)
-        val updated = if (allowed) current + site else current - site
-        allowedSites = updated
-        BrowserPreferences.setAdBlockAllowedSites(context.applicationContext, updated)
-    }
+    fun setSiteAllowed(context: Context, site: String, allowed: Boolean) =
+        allowedSites.set(context, site, allowed)
 
     /** Downloads fresh filter lists now; [onComplete] runs on the main thread. */
     fun updateFilterLists(context: Context, onComplete: (updated: Boolean) -> Unit) {
@@ -152,9 +139,17 @@ object AdBlocker {
      * successful load, so `fetch()` resolves and scripts fire `onload`, which lets ad scripts and
      * ad block tests see the request as "not blocked". WebView fails the request when the stream
      * throws before any headers are sent.
+     *
+     * Blocked ad frames get an empty page instead, since a failed frame shows an error page in the
+     * ad slot. Frames ask for HTML; `fetch()`, scripts and images do not.
      */
-    fun blockedResponse(): WebResourceResponse =
-        WebResourceResponse("text/plain", "utf-8", FailingInputStream)
+    fun blockedResponse(request: WebResourceRequest): WebResourceResponse {
+        val accept = request.requestHeaders.entries.firstOrNull { it.key.equals("Accept", ignoreCase = true) }?.value
+        if (accept?.startsWith("text/html") == true) {
+            return WebResourceResponse("text/html", "utf-8", ByteArrayInputStream(ByteArray(0)))
+        }
+        return WebResourceResponse("text/plain", "utf-8", FailingInputStream)
+    }
 
     private object FailingInputStream : InputStream() {
         private val blocked = IOException("Blocked by AABrowser ad blocker")

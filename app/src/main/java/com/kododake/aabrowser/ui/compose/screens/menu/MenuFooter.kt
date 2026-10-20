@@ -91,7 +91,7 @@ fun MenuFooter(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 modifier = Modifier
-                    .height(42.dp)
+                    .height(48.dp)
                     .padding(horizontal = 4.dp)
                     .bouncyClickable(
                         interactionSource = checkUpdateInteraction,
@@ -121,7 +121,7 @@ fun MenuFooter(
                     containerColor = githubBg
                 ),
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(48.dp)
                     .border(
                         width = 1.dp,
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),

@@ -195,6 +195,10 @@ fun configureWebView(
                     if (now - lastPopupAt < POPUP_COOLDOWN_MS) return false
                     lastPopupAt = now
                 }
+                if (RedirectBlocker.shouldBlockPopup(view?.url, RedirectBlocker.isLinkTap(view))) {
+                    callbacks.onPopupWindowBlocked(view?.url)
+                    return false
+                }
                 val newWebView = callbacks.onCreateNewWindow()
                 if (newWebView != null) {
                     val transport = resultMsg.obj as? WebView.WebViewTransport

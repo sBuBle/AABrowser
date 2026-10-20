@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.SpaceBar
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.automirrored.rounded.ViewSidebar
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,7 @@ fun InAppControlsComposable(
     var fabMode by remember { mutableStateOf(BrowserPreferences.getQuickActionButtonMode(context)) }
     var fabAlwaysVisible by remember { mutableStateOf(BrowserPreferences.isQuickActionButtonAlwaysVisible(context)) }
     var fabPos by remember { mutableStateOf(BrowserPreferences.getQuickActionButtonPosition(context)) }
+    var bottomToolbar by remember { mutableStateOf(BrowserPreferences.isBottomToolbarEnabled(context)) }
 
     var showFabModeDialog by remember { mutableStateOf(false) }
     var showFabPosDialog by remember { mutableStateOf(false) }
@@ -72,6 +74,31 @@ fun InAppControlsComposable(
         )
 
         ExpressiveListItem(
+            headline = stringResource(R.string.settings_bottom_toolbar),
+            supportingText = stringResource(R.string.settings_bottom_toolbar_description),
+            leadingIcon = Icons.Rounded.SpaceBar,
+            position = ListGroupPosition.Top,
+            trailingContent = {
+                Switch(
+                    checked = bottomToolbar,
+                    onCheckedChange = { checked ->
+                        bottomToolbar = checked
+                        BrowserPreferences.setBottomToolbarEnabled(context, checked)
+                        onInAppControlsChanged()
+                    }
+                )
+            },
+            onClick = {
+                val next = !bottomToolbar
+                bottomToolbar = next
+                BrowserPreferences.setBottomToolbarEnabled(context, next)
+                onInAppControlsChanged()
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
             headline = stringResource(R.string.settings_quick_action_button_mode),
             supportingText = if (fabMode == QuickActionButtonMode.MENU) {
                 stringResource(R.string.settings_quick_action_button_mode_menu)
@@ -79,7 +106,7 @@ fun InAppControlsComposable(
                 stringResource(R.string.settings_quick_action_button_mode_address_bar)
             },
             leadingIcon = Icons.AutoMirrored.Rounded.ViewSidebar,
-            position = ListGroupPosition.Top,
+            position = ListGroupPosition.Middle,
             onClick = { showFabModeDialog = true }
         )
 

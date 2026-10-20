@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Delete
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.WebAssetOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -64,12 +66,13 @@ import com.kododake.aabrowser.model.UserAgentProfile
 import com.kododake.aabrowser.ui.compose.components.ExpressiveListItem
 import com.kododake.aabrowser.ui.compose.components.ListGroupPosition
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
-import com.kododake.aabrowser.ui.compose.screens.dialogs.AdBlockAllowedSitesDialog
+import com.kododake.aabrowser.ui.compose.screens.dialogs.AllowedSitesDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.CustomUserAgentDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveConfirmationDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveSingleChoiceDialog
 import com.kododake.aabrowser.adblock.FilterListManager
 import com.kododake.aabrowser.web.AdBlocker
+import com.kododake.aabrowser.web.RedirectBlocker
 import com.kododake.aabrowser.web.SslErrorHandlerHelper
 import java.text.DateFormat
 import java.text.NumberFormat
@@ -91,6 +94,9 @@ fun PrivacyAndAboutComposable(
     var filterListsUpdating by remember { mutableStateOf(false) }
     var allowedSites by remember { mutableStateOf(BrowserPreferences.getAdBlockAllowedSites(context).sorted()) }
     var showAllowedSitesDialog by remember { mutableStateOf(false) }
+    var blockRedirects by remember { mutableStateOf(BrowserPreferences.isRedirectBlockingEnabled(context)) }
+    var redirectAllowedSites by remember { mutableStateOf(BrowserPreferences.getRedirectAllowedSites(context).sorted()) }
+    var showRedirectSitesDialog by remember { mutableStateOf(false) }
     var showUaDialog by remember { mutableStateOf(false) }
     var showCustomUaDialog by remember { mutableStateOf(false) }
     var showClearCookiesDialog by remember { mutableStateOf(false) }
@@ -164,8 +170,45 @@ fun PrivacyAndAboutComposable(
                 pluralStringResource(R.plurals.settings_ad_block_allowed_sites_count, allowedSites.size, allowedSites.size)
             },
             leadingIcon = Icons.Rounded.Language,
-            position = ListGroupPosition.Bottom,
+            position = ListGroupPosition.Middle,
             onClick = { showAllowedSitesDialog = true }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_block_redirects),
+            supportingText = stringResource(R.string.settings_block_redirects_description),
+            leadingIcon = Icons.Rounded.WebAssetOff,
+            position = ListGroupPosition.Middle,
+            trailingContent = {
+                Switch(
+                    checked = blockRedirects,
+                    onCheckedChange = { checked ->
+                        blockRedirects = checked
+                        RedirectBlocker.setEnabled(context, checked)
+                    }
+                )
+            },
+            onClick = {
+                val next = !blockRedirects
+                blockRedirects = next
+                RedirectBlocker.setEnabled(context, next)
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_redirect_allowed_sites),
+            supportingText = if (redirectAllowedSites.isEmpty()) {
+                stringResource(R.string.settings_redirect_allowed_sites_none)
+            } else {
+                pluralStringResource(R.plurals.settings_ad_block_allowed_sites_count, redirectAllowedSites.size, redirectAllowedSites.size)
+            },
+            leadingIcon = Icons.AutoMirrored.Rounded.OpenInNew,
+            position = ListGroupPosition.Bottom,
+            onClick = { showRedirectSitesDialog = true }
         )
 
         Spacer(Modifier.height(24.dp))
@@ -349,13 +392,30 @@ fun PrivacyAndAboutComposable(
     }
 
     if (showAllowedSitesDialog) {
-        AdBlockAllowedSitesDialog(
+        AllowedSitesDialog(
+            title = stringResource(R.string.settings_ad_block_allowed_sites),
+            emptyText = stringResource(R.string.settings_ad_block_allowed_sites_empty),
+            removeDescription = { site -> context.getString(R.string.settings_ad_block_allowed_site_remove, site) },
             sites = allowedSites,
             onRemoveSite = { site ->
                 AdBlocker.setSiteAllowed(context, site, allowed = false)
                 allowedSites = BrowserPreferences.getAdBlockAllowedSites(context).sorted()
             },
             onDismiss = { showAllowedSitesDialog = false }
+        )
+    }
+
+    if (showRedirectSitesDialog) {
+        AllowedSitesDialog(
+            title = stringResource(R.string.settings_redirect_allowed_sites),
+            emptyText = stringResource(R.string.settings_redirect_allowed_sites_empty),
+            removeDescription = { site -> context.getString(R.string.settings_redirect_allowed_site_remove, site) },
+            sites = redirectAllowedSites,
+            onRemoveSite = { site ->
+                RedirectBlocker.allowedSites.set(context, site, included = false)
+                redirectAllowedSites = BrowserPreferences.getRedirectAllowedSites(context).sorted()
+            },
+            onDismiss = { showRedirectSitesDialog = false }
         )
     }
 
