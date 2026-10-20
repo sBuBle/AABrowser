@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.5
 - On car displays and phones in landscape, the browser menu fits on one screen: back, forward and reload sit in a slim header with Check for Updates, the shortcuts are compact, and the address bar uses the whole column.
 - Settings use two columns on wide screens (car displays, landscape, tablets).
 - Phones in landscape use the floating menu button like the car screen, instead of a bottom toolbar taking a sixth of the page.
