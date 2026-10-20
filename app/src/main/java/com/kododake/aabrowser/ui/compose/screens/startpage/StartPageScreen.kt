@@ -17,8 +17,6 @@
 
 package com.kododake.aabrowser.ui.compose.screens.startpage
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,17 +29,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.kododake.aabrowser.data.BrowserPreferences
-import com.kododake.aabrowser.data.prefs.StartPagePreferences
-import com.kododake.aabrowser.data.prefs.UIPreferences
 import com.kododake.aabrowser.ui.compose.components.DynamicWallpaperBackground
 import com.kododake.aabrowser.ui.compose.theme.AABrowserTheme
 
@@ -51,45 +41,18 @@ data class StartPageScreenCallbacks(
     val onMoveSlot: (Int, Int) -> Unit = { _, _ -> },
     val onClearSlot: (Int) -> Unit = {},
     val onResumeClick: () -> Unit = {},
-    val onPhotoOnlyToggle: () -> Unit = {},
-    val onOpenSponsors: (String) -> Unit = {},
-    val onOpenAAAnything: () -> Unit = {},
-    val onDismissAAAnything: () -> Unit = {}
+    val onPhotoOnlyToggle: () -> Unit = {}
 )
 
 @Composable
 fun StartPageScreen(
-    context: Context,
     slots: List<StartPageSlotUi>,
     hasResumePage: Boolean,
-    sponsorsQrBitmap: Bitmap?,
     customBackgroundBitmap: Bitmap? = null,
     isNavigating: Boolean = false,
     callbacks: StartPageScreenCallbacks = StartPageScreenCallbacks(),
     modifier: Modifier = Modifier
 ) {
-    var shouldHideSponsors by remember {
-        mutableStateOf(BrowserPreferences.shouldHideSponsors(context))
-    }
-    var showAAAnythingPromotion by remember {
-        mutableStateOf(BrowserPreferences.shouldShowAAAnythingPromotion(context))
-    }
-    val prefsListener = remember(context) {
-        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == StartPagePreferences.KEY_SHOW_AA_ANYTHING_PROMOTION) {
-                showAAAnythingPromotion = BrowserPreferences.shouldShowAAAnythingPromotion(context)
-            } else if (key == UIPreferences.KEY_HIDE_SPONSORS) {
-                shouldHideSponsors = BrowserPreferences.shouldHideSponsors(context)
-            }
-        }
-    }
-    DisposableEffect(context, prefsListener) {
-        val prefs = context.getSharedPreferences(StartPagePreferences.PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.registerOnSharedPreferenceChangeListener(prefsListener)
-        onDispose {
-            prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
-        }
-    }
     val scrollState = rememberScrollState()
 
     AABrowserTheme {
@@ -107,17 +70,6 @@ fun StartPageScreen(
                         onNavigate = callbacks.onNavigate
                     )
 
-                    if (showAAAnythingPromotion) {
-                        Spacer(Modifier.height(16.dp))
-                        AAAnythingPromotionCard(
-                            onOpenUrl = callbacks.onOpenAAAnything,
-                            onDismiss = {
-                                showAAAnythingPromotion = false
-                                callbacks.onDismissAAAnything()
-                            }
-                        )
-                    }
-
                     Spacer(Modifier.height(16.dp))
 
                     StartPageQuickLinks(
@@ -127,17 +79,7 @@ fun StartPageScreen(
                         onClearSlot = callbacks.onClearSlot
                     )
 
-                    Spacer(Modifier.height(16.dp))
-
-                    if (!shouldHideSponsors) {
-                        Spacer(Modifier.height(16.dp))
-                        StartPageSponsorsSection(
-                            githubQrBitmap = sponsorsQrBitmap,
-                            onOpenUrl = callbacks.onOpenSponsors
-                        )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(32.dp))
 
                     StartPageActionRow(
                         hasResumePage = hasResumePage,

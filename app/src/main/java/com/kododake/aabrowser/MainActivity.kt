@@ -118,13 +118,13 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         DynamicColors.applyToActivityIfAvailable(this)
         AppCompatDelegate.setDefaultNightMode(BrowserPreferences.getThemeMode(this).nightMode)
         BrowserPreferences.ensureGameBookmarkMigrated(this)
+        BrowserPreferences.removeObsoleteData(this)
         super.onCreate(savedInstanceState)
 
         shouldForceSessionRestore = (savedInstanceState != null)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        managers.umamiTracker.trackEvent("app_open")
         setupUi()
         setupBackPressHandling()
         networkStateMonitor.start()

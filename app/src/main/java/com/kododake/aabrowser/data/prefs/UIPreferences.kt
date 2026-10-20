@@ -28,7 +28,6 @@ object UIPreferences {
     private const val KEY_QUICK_ACTION_BUTTON_ALWAYS_VISIBLE = "quick_action_button_always_visible"
     private const val KEY_QUICK_ACTION_BUTTON_POSITION = "quick_action_button_position"
     private const val KEY_BOTTOM_TOOLBAR = "bottom_toolbar_enabled"
-    const val KEY_HIDE_SPONSORS = "hide_sponsors"
     private const val KEY_USER_AGENT_PROFILE = "user_agent_profile"
     private const val KEY_CUSTOM_USER_AGENT = "custom_user_agent"
     private const val KEY_DESKTOP_MODE = "desktop_mode"
@@ -81,18 +80,6 @@ object UIPreferences {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_QUICK_ACTION_BUTTON_POSITION, position.storageKey)
-            .apply()
-    }
-
-    fun shouldHideSponsors(context: Context): Boolean {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getBoolean(KEY_HIDE_SPONSORS, false)
-    }
-
-    fun setHideSponsors(context: Context, hide: Boolean) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_HIDE_SPONSORS, hide)
             .apply()
     }
 
@@ -150,4 +137,16 @@ object UIPreferences {
             .putBoolean(KEY_FULLSCREEN_MODE, enabled)
             .apply()
     }
+
+    /** Deletes what removed features left behind: the analytics ID and the sponsor and promotion card flags. */
+    fun removeObsoleteData(context: Context) {
+        context.deleteSharedPreferences(OBSOLETE_ANALYTICS_PREFS_NAME)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (OBSOLETE_KEYS.any(prefs::contains)) {
+            prefs.edit().apply { OBSOLETE_KEYS.forEach(::remove) }.apply()
+        }
+    }
+
+    private const val OBSOLETE_ANALYTICS_PREFS_NAME = "umami_prefs"
+    private val OBSOLETE_KEYS = listOf("hide_sponsors", "show_aa_anything_promotion")
 }

@@ -21,6 +21,7 @@
 - Fixed "Check for Updates" saying an update is available when the installed version is the same or newer.
 - On phones set to Hebrew, Arabic or another right-to-left language, the (English) app is no longer mirrored, and punctuation no longer jumps to the start of sentences. Dialog buttons are no longer partly in the system language.
 - Debug builds install next to the release app instead of replacing it.
+- Removed the original project's usage analytics (an "app opened" event sent on every launch), its sponsor section on the start page and its AA Anything banner and settings; the analytics ID left on the phone is deleted. The GitHub links in the menu and in Settings now open this fork.
 
 ## 3.4
 - The phone and the car screen now share the same tabs: pages opened, closed or switched on one show up on the other when you turn to it, and one screen no longer overwrites the tabs saved by the other.
