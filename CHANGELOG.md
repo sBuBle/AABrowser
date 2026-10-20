@@ -13,6 +13,8 @@
 - Fixed "Check for Updates" saying an update is available when the installed version is the same or newer.
 - On phones set to Hebrew, Arabic or another right-to-left language, the (English) app is no longer mirrored, and punctuation no longer jumps to the start of sentences. Dialog buttons are no longer partly in the system language.
 - Debug builds install next to the release app instead of replacing it.
+
+## 3.4
 - The phone and the car screen now share the same tabs: pages opened, closed or switched on one show up on the other when you turn to it, and one screen no longer overwrites the tabs saved by the other.
 - Added a bottom toolbar on the phone (back, forward, address, tabs, menu), like other mobile browsers; the car screen and full screen mode keep the floating button. It can be turned off under In-app controls.
 - The browser menu now uses two columns on wide, short screens (car displays, phones in landscape), so it fits without scrolling, and sizes itself to the screen height.
@@ -24,5 +26,7 @@
 - Added the HaGeZi Light filter list, which covers phone and app telemetry servers the other lists miss.
 - Added an ad blocker card to the browser menu showing how many ads were blocked on the page, with a switch to turn the ad blocker off for the current site.
 - Added an "Ad blocking" section in settings with the list of sites where ads are allowed.
+
+## 3.3
 - Added new User Agent profiles (Firefox, Edge, Samsung Internet).
 - Added a Custom User Agent profile with user-defined string.
