@@ -36,6 +36,7 @@ import com.kododake.aabrowser.startpage.StartPageManager
 import com.kododake.aabrowser.tabs.TabManager
 import com.kododake.aabrowser.ui.controllers.FullscreenController
 import com.kododake.aabrowser.ui.controllers.MenuDragGestureHelper
+import com.kododake.aabrowser.web.adsBlockedCount
 
 class BrowserUIManager(
     private val activity: AppCompatActivity,
@@ -122,6 +123,7 @@ class BrowserUIManager(
             url = if (isStart) "" else (curTab?.currentUrl.orEmpty()),
             title = if (isStart) "" else (curTab?.currentTitle.orEmpty())
         )
+        refreshAdBlockMenuState()
         binding.menuOverlay.visibility = View.VISIBLE
         binding.menuComposeView.visibility = View.VISIBLE
         applyFrostedGlassProgress(if (menuHelper.stateHolder.isReturningFromSubscreen) 1f else 0f)
@@ -131,6 +133,13 @@ class BrowserUIManager(
         bookmarkManager.refreshBookmarks()
         tabManager.refreshTabs()
         startPageManager.refreshStartPage()
+    }
+
+    /** Updates the menu's ad blocker card for the active tab. */
+    fun refreshAdBlockMenuState() {
+        val tab = tabManager.activeTab
+        val pageUrl = if (startPageManager.isShowingStartPage) null else tab?.currentUrl
+        menuHelper.updateAdBlock(pageUrl, tab?.webView?.adsBlockedCount ?: 0)
     }
 
     fun hasActiveSubScreen(): Boolean = binding.settingsComposeView.isVisible ||

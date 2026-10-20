@@ -22,9 +22,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,7 +53,8 @@ fun MenuSwitchCard(
     icon: ImageVector,
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    supportingText: String? = null
 ) {
     val targetContainerColor = if (isChecked) {
         MaterialTheme.colorScheme.primaryContainer
@@ -98,8 +100,8 @@ fun MenuSwitchCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(62.dp)
-                .padding(horizontal = 16.dp),
+                .heightIn(min = 62.dp)
+                .padding(horizontal = 16.dp, vertical = if (supportingText != null) 10.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -117,15 +119,25 @@ fun MenuSwitchCard(
                 )
             }
 
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
+            Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 14.dp)
-            )
+                    .padding(start = 14.dp, end = 8.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (supportingText != null) {
+                    Text(
+                        text = supportingText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Switch(
                 checked = isChecked,

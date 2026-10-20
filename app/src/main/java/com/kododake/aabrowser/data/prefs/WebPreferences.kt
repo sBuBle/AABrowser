@@ -25,6 +25,7 @@ object WebPreferences {
     const val DEFAULT_DRM_L3_ENFORCER = true
     private const val KEY_AD_BLOCKER = "ad_blocker_enabled"
     const val DEFAULT_AD_BLOCKER = true
+    private const val KEY_AD_BLOCK_ALLOWED_SITES = "ad_block_allowed_sites"
 
     fun isDrmL3EnforcerEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -47,6 +48,19 @@ object WebPreferences {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_AD_BLOCKER, enabled)
+            .apply()
+    }
+
+    /** Sites (hosts) the user turned the ad blocker off for. */
+    fun getAdBlockAllowedSites(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_AD_BLOCK_ALLOWED_SITES, emptySet())?.toSet() ?: emptySet()
+    }
+
+    fun setAdBlockAllowedSites(context: Context, sites: Set<String>) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putStringSet(KEY_AD_BLOCK_ALLOWED_SITES, sites.toSet())
             .apply()
     }
 }

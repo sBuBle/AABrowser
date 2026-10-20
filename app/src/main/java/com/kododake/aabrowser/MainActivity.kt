@@ -301,6 +301,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         currentPageTitle = tab.currentTitle
         managers.bookmarkManager.updateBookmarkTitleIfBetter(tab.currentUrl, tab.currentTitle)
         managers.uiManager.menuHelper.updatePage(tab.currentUrl, tab.currentTitle)
+        managers.uiManager.refreshAdBlockMenuState()
     }
     override fun onShowStartPage() { showStartPage() }
     override fun onHideStartPage() { hideStartPage() }

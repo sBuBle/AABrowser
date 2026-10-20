@@ -171,6 +171,11 @@ class WebBrowserCallbackFactory(
                     }
                 }
             },
+            onAdsBlockedChanged = {
+                if (tab.id == provider.tabManager.activeTabId) {
+                    provider.uiManager.refreshAdBlockMenuState()
+                }
+            },
             onRenderProcessGone = { didCrash ->
                 activity.runOnUiThread {
                     Toast.makeText(

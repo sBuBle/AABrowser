@@ -187,7 +187,7 @@ fun configureWebView(
                 resultMsg: Message?
             ): Boolean {
                 if (resultMsg == null) return false
-                if (AdBlocker.isEnabled) {
+                if (AdBlocker.isActiveFor(view?.url)) {
                     // Pop-ups nobody tapped for, and the extra windows pop-under scripts open on
                     // every tap, are refused outright.
                     if (!isUserGesture) return false
@@ -255,6 +255,10 @@ fun WebView.updateUserAgentProfile(profile: UserAgentProfile, desktop: Boolean) 
     UserAgentManager.applyBrowserIdentity(this, profile, desktop)
     reload()
 }
+
+/** Ads, trackers and ad redirects the ad blocker stopped on the page shown in this WebView. */
+val WebView.adsBlockedCount: Int
+    get() = getTag(R.id.webview_ads_blocked_count_tag) as? Int ?: 0
 
 fun WebView.updateAdBlocker(enabled: Boolean, reload: Boolean = true) {
     if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {

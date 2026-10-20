@@ -23,6 +23,7 @@ import com.kododake.aabrowser.ui.compose.screens.menu.BrowserMenuFab
 import com.kododake.aabrowser.ui.compose.screens.menu.BrowserMenuSheet
 import com.kododake.aabrowser.ui.compose.screens.menu.MenuActions
 import com.kododake.aabrowser.ui.compose.screens.menu.MenuStateHolder
+import com.kododake.aabrowser.web.AdBlocker
 
 /**
  * Helper to manage Compose browser menu lifecycle and reactive state bridge.
@@ -70,6 +71,14 @@ class MenuSetupHelper {
 
     fun updatePage(url: String, title: String? = null) {
         stateHolder.updatePageInfo(url, title)
+    }
+
+    /** [pageUrl] is null while no web page is shown, which hides the ad blocker card. */
+    fun updateAdBlock(pageUrl: String?, blockedCount: Int) {
+        stateHolder.adBlockSite = AdBlocker.siteOf(pageUrl)
+        stateHolder.isAdBlockerEnabled = AdBlocker.isEnabled
+        stateHolder.isAdBlockActiveOnSite = !AdBlocker.isAllowedSite(pageUrl)
+        stateHolder.adsBlockedCount = blockedCount
     }
 
     fun updateVersion(version: String) {
