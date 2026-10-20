@@ -132,4 +132,6 @@ object BrowserPreferences {
     fun setDrmL3EnforcerEnabled(context: Context, enabled: Boolean) = WebPreferences.setDrmL3EnforcerEnabled(context, enabled)
     fun isAdBlockerEnabled(context: Context): Boolean = WebPreferences.isAdBlockerEnabled(context)
     fun setAdBlockerEnabled(context: Context, enabled: Boolean) = WebPreferences.setAdBlockerEnabled(context, enabled)
+    fun getAdBlockAllowedSites(context: Context): Set<String> = WebPreferences.getAdBlockAllowedSites(context)
+    fun setAdBlockAllowedSites(context: Context, sites: Set<String>) = WebPreferences.setAdBlockAllowedSites(context, sites)
 }

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kododake.aabrowser.AppConstants
@@ -62,6 +64,7 @@ import com.kododake.aabrowser.model.UserAgentProfile
 import com.kododake.aabrowser.ui.compose.components.ExpressiveListItem
 import com.kododake.aabrowser.ui.compose.components.ListGroupPosition
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
+import com.kododake.aabrowser.ui.compose.screens.dialogs.AdBlockAllowedSitesDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.CustomUserAgentDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveConfirmationDialog
 import com.kododake.aabrowser.ui.compose.screens.dialogs.ExpressiveSingleChoiceDialog
@@ -86,12 +89,87 @@ fun PrivacyAndAboutComposable(
     var adBlockerEnabled by remember { mutableStateOf(BrowserPreferences.isAdBlockerEnabled(context)) }
     var filterListsStatus by remember { mutableStateOf(filterListsStatus(context)) }
     var filterListsUpdating by remember { mutableStateOf(false) }
+    var allowedSites by remember { mutableStateOf(BrowserPreferences.getAdBlockAllowedSites(context).sorted()) }
+    var showAllowedSitesDialog by remember { mutableStateOf(false) }
     var showUaDialog by remember { mutableStateOf(false) }
     var showCustomUaDialog by remember { mutableStateOf(false) }
     var showClearCookiesDialog by remember { mutableStateOf(false) }
     var showClearPermissionsDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.settings_ad_block_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+        )
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_ad_blocker),
+            supportingText = stringResource(R.string.settings_ad_blocker_description),
+            leadingIcon = Icons.Rounded.Block,
+            position = ListGroupPosition.Top,
+            trailingContent = {
+                Switch(
+                    checked = adBlockerEnabled,
+                    onCheckedChange = { checked ->
+                        adBlockerEnabled = checked
+                        BrowserPreferences.setAdBlockerEnabled(context, checked)
+                        onAdBlockerChanged()
+                    }
+                )
+            },
+            onClick = {
+                val next = !adBlockerEnabled
+                adBlockerEnabled = next
+                BrowserPreferences.setAdBlockerEnabled(context, next)
+                onAdBlockerChanged()
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_ad_block_lists),
+            supportingText = if (filterListsUpdating) {
+                stringResource(R.string.settings_ad_block_lists_updating)
+            } else {
+                filterListsStatus
+            },
+            leadingIcon = Icons.Rounded.FilterList,
+            position = ListGroupPosition.Middle,
+            onClick = {
+                if (!filterListsUpdating) {
+                    filterListsUpdating = true
+                    AdBlocker.updateFilterLists(context) { updated ->
+                        filterListsUpdating = false
+                        filterListsStatus = filterListsStatus(context)
+                        Toast.makeText(
+                            context,
+                            if (updated) R.string.settings_ad_block_lists_updated else R.string.settings_ad_block_lists_update_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        )
+
+        Spacer(Modifier.height(3.dp))
+
+        ExpressiveListItem(
+            headline = stringResource(R.string.settings_ad_block_allowed_sites),
+            supportingText = if (allowedSites.isEmpty()) {
+                stringResource(R.string.settings_ad_block_allowed_sites_none)
+            } else {
+                pluralStringResource(R.plurals.settings_ad_block_allowed_sites_count, allowedSites.size, allowedSites.size)
+            },
+            leadingIcon = Icons.Rounded.Language,
+            position = ListGroupPosition.Bottom,
+            onClick = { showAllowedSitesDialog = true }
+        )
+
+        Spacer(Modifier.height(24.dp))
+
         Text(
             text = stringResource(R.string.settings_site_data_title),
             style = MaterialTheme.typography.titleMedium,
@@ -140,58 +218,6 @@ fun PrivacyAndAboutComposable(
                 drmL3Enabled = next
                 BrowserPreferences.setDrmL3EnforcerEnabled(context, next)
                 onDrmL3EnforcerChanged()
-            }
-        )
-
-        Spacer(Modifier.height(3.dp))
-
-        ExpressiveListItem(
-            headline = stringResource(R.string.settings_ad_blocker),
-            supportingText = stringResource(R.string.settings_ad_blocker_description),
-            leadingIcon = Icons.Rounded.Block,
-            position = ListGroupPosition.Middle,
-            trailingContent = {
-                Switch(
-                    checked = adBlockerEnabled,
-                    onCheckedChange = { checked ->
-                        adBlockerEnabled = checked
-                        BrowserPreferences.setAdBlockerEnabled(context, checked)
-                        onAdBlockerChanged()
-                    }
-                )
-            },
-            onClick = {
-                val next = !adBlockerEnabled
-                adBlockerEnabled = next
-                BrowserPreferences.setAdBlockerEnabled(context, next)
-                onAdBlockerChanged()
-            }
-        )
-
-        Spacer(Modifier.height(3.dp))
-
-        ExpressiveListItem(
-            headline = stringResource(R.string.settings_ad_block_lists),
-            supportingText = if (filterListsUpdating) {
-                stringResource(R.string.settings_ad_block_lists_updating)
-            } else {
-                filterListsStatus
-            },
-            leadingIcon = Icons.Rounded.FilterList,
-            position = ListGroupPosition.Middle,
-            onClick = {
-                if (!filterListsUpdating) {
-                    filterListsUpdating = true
-                    AdBlocker.updateFilterLists(context) { updated ->
-                        filterListsUpdating = false
-                        filterListsStatus = filterListsStatus(context)
-                        Toast.makeText(
-                            context,
-                            if (updated) R.string.settings_ad_block_lists_updated else R.string.settings_ad_block_lists_update_failed,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
             }
         )
 
@@ -319,6 +345,17 @@ fun PrivacyAndAboutComposable(
                 showClearPermissionsDialog = false
             },
             onDismiss = { showClearPermissionsDialog = false }
+        )
+    }
+
+    if (showAllowedSitesDialog) {
+        AdBlockAllowedSitesDialog(
+            sites = allowedSites,
+            onRemoveSite = { site ->
+                AdBlocker.setSiteAllowed(context, site, allowed = false)
+                allowedSites = BrowserPreferences.getAdBlockAllowedSites(context).sorted()
+            },
+            onDismiss = { showAllowedSitesDialog = false }
         )
     }
 

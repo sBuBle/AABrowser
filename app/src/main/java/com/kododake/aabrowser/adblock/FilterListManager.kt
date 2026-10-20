@@ -58,6 +58,17 @@ object FilterListManager {
             urls = listOf(
                 "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&mimetype=plaintext"
             )
+        ),
+        // DNS level list: covers ad, telemetry and analytics servers (Xiaomi, Oppo, Huawei, Apple,
+        // TikTok, Yahoo, ...) that the browser lists above leave out.
+        FilterList(
+            id = "hagezi-light",
+            title = "HaGeZi Light",
+            urls = listOf(
+                "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/light.txt",
+                "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/light.txt",
+                "https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/light.txt"
+            )
         )
     )
 

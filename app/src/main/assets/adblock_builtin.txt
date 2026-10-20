@@ -1,5 +1,5 @@
 ! Title: AABrowser built-in filters
-! Adblock Plus syntax. Used until the downloaded lists (EasyList, EasyPrivacy, Peter Lowe's list)
+! Adblock Plus syntax. Used until the downloaded lists (EasyList, EasyPrivacy, Peter Lowe's list, HaGeZi Light)
 ! are available, and kept alongside them afterwards for car-relevant extras such as YouTube ad beacons.
 !
 ! Top-level page navigations are never blocked by plain rules, only the ads, trackers and pop-ups a

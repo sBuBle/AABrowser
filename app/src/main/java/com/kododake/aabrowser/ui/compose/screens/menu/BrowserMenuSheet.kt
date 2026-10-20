@@ -111,6 +111,18 @@ fun BrowserMenuSheet(
                 onFullscreenToggle = actions.onFullscreenToggle
             )
 
+            stateHolder.adBlockSite?.let { site ->
+                Spacer(Modifier.height(8.dp))
+
+                MenuAdBlockSwitchCard(
+                    site = site,
+                    isAdBlockerEnabled = stateHolder.isAdBlockerEnabled,
+                    isActiveOnSite = stateHolder.isAdBlockActiveOnSite,
+                    blockedCount = stateHolder.adsBlockedCount,
+                    onAdBlockToggle = actions.onAdBlockToggle
+                )
+            }
+
             Spacer(Modifier.height(4.dp))
 
             MenuFooter(

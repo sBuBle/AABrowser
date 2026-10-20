@@ -18,6 +18,7 @@
 package com.kododake.aabrowser.web
 
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -27,16 +28,17 @@ import android.webkit.WebResourceResponse
 import com.kododake.aabrowser.adblock.FilterEngine
 import com.kododake.aabrowser.adblock.FilterListManager
 import com.kododake.aabrowser.data.BrowserPreferences
-import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.Executors
 
 /**
  * WebView-facing side of the ad blocker.
  *
- * Starts with the bundled `adblock_builtin.txt` rules, then loads EasyList, EasyPrivacy and Peter
- * Lowe's list (downloaded and refreshed by [FilterListManager]) on a background thread and swaps
- * the new [FilterEngine] in once it is built. Request checks run on WebView's network threads, so
- * they only read the current engine and never wait for it.
+ * Starts with the bundled `adblock_builtin.txt` rules, then loads EasyList, EasyPrivacy, Peter
+ * Lowe's list and HaGeZi Light (downloaded and refreshed by [FilterListManager]) on a background
+ * thread and swaps the new [FilterEngine] in once it is built. Request checks run on WebView's
+ * network threads, so they only read the current engine and never wait for it.
  */
 object AdBlocker {
     private const val BUILTIN_RULES_ASSET = "adblock_builtin.txt"
@@ -48,6 +50,11 @@ object AdBlocker {
 
     @Volatile
     var isEnabled: Boolean = true
+        private set
+
+    /** Sites the user turned the ad blocker off for, see [siteOf]. */
+    @Volatile
+    var allowedSites: Set<String> = emptySet()
         private set
 
     @Volatile
@@ -66,6 +73,7 @@ object AdBlocker {
         synchronized(this) {
             if (initialized) return
             isEnabled = BrowserPreferences.isAdBlockerEnabled(appContext)
+            allowedSites = BrowserPreferences.getAdBlockAllowedSites(appContext)
             initialized = true
         }
         worker.execute {
@@ -80,6 +88,34 @@ object AdBlocker {
 
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
+    }
+
+    /** The key used for per-site exceptions: the page's host without `www.`, or null for non-web pages. */
+    fun siteOf(pageUrl: String?): String? {
+        if (pageUrl.isNullOrEmpty()) return null
+        val uri = Uri.parse(pageUrl)
+        val scheme = uri.scheme?.lowercase()
+        if (scheme != "http" && scheme != "https") return null
+        return uri.host?.lowercase()?.removePrefix("www.")?.takeIf { it.isNotEmpty() }
+    }
+
+    /** Whether the user turned the ad blocker off for the site of [pageUrl] (or a parent domain of it). */
+    fun isAllowedSite(pageUrl: String?): Boolean {
+        val sites = allowedSites
+        if (sites.isEmpty()) return false
+        val host = siteOf(pageUrl) ?: return false
+        return sites.any { site -> host == site || host.endsWith(".$site") }
+    }
+
+    /** Whether ads are blocked on [pageUrl]: the ad blocker is on and the site is not an exception. */
+    fun isActiveFor(pageUrl: String?): Boolean = isEnabled && !isAllowedSite(pageUrl)
+
+    fun setSiteAllowed(context: Context, site: String, allowed: Boolean) {
+        // Read from preferences: settings can be opened before any WebView initialized the blocker.
+        val current = BrowserPreferences.getAdBlockAllowedSites(context)
+        val updated = if (allowed) current + site else current - site
+        allowedSites = updated
+        BrowserPreferences.setAdBlockAllowedSites(context.applicationContext, updated)
     }
 
     /** Downloads fresh filter lists now; [onComplete] runs on the main thread. */
@@ -97,6 +133,7 @@ object AdBlocker {
         val url = request.url ?: return false
         val scheme = url.scheme?.lowercase()
         if (scheme != "http" && scheme != "https") return false
+        if (isAllowedSite(pageUrl)) return false
         return engine.shouldBlockRequest(url.toString(), pageUrl)
     }
 
@@ -105,24 +142,41 @@ object AdBlocker {
      * redirecting itself to an ad without the user asking for it.
      */
     fun shouldBlockNavigation(url: String, openerUrl: String?, isPopup: Boolean): Boolean {
-        if (!isEnabled) return false
+        if (!isActiveFor(openerUrl)) return false
         return engine.shouldBlockNavigation(url, openerUrl, isPopup)
     }
 
+    /**
+     * A response that makes WebView fail the request with a network error, like a real ad blocker.
+     * An empty `200 OK` (or a null body, which WebView turns into a `404`) still counts as a
+     * successful load, so `fetch()` resolves and scripts fire `onload`, which lets ad scripts and
+     * ad block tests see the request as "not blocked". WebView fails the request when the stream
+     * throws before any headers are sent.
+     */
     fun blockedResponse(): WebResourceResponse =
-        WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
+        WebResourceResponse("text/plain", "utf-8", FailingInputStream)
+
+    private object FailingInputStream : InputStream() {
+        private val blocked = IOException("Blocked by AABrowser ad blocker")
+
+        override fun available(): Int = throw blocked
+
+        override fun read(): Int = throw blocked
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int = throw blocked
+    }
 
     /** Exposed to pages as `AABAdBlock` for the element hiding part of [WebScripts.AD_BLOCK_COSMETIC_JS]. */
     class CosmeticBridge {
         @JavascriptInterface
         fun pageCss(pageUrl: String?, isTopFrame: Boolean): String {
-            if (!isEnabled || pageUrl.isNullOrEmpty()) return ""
+            if (!isEnabled || pageUrl.isNullOrEmpty() || isAllowedSite(pageUrl)) return ""
             return runCatching { engine.pageCss(pageUrl, includeGenericComplex = isTopFrame) }.getOrDefault("")
         }
 
         @JavascriptInterface
         fun genericCss(pageUrl: String?, tokens: String?): String {
-            if (!isEnabled || pageUrl.isNullOrEmpty() || tokens.isNullOrEmpty()) return ""
+            if (!isEnabled || pageUrl.isNullOrEmpty() || tokens.isNullOrEmpty() || isAllowedSite(pageUrl)) return ""
             if (tokens.length > MAX_COSMETIC_TOKENS_CHARS) return ""
             return runCatching { engine.genericCss(pageUrl, tokens.split(' ')) }.getOrDefault("")
         }

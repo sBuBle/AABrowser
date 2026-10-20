@@ -33,6 +33,8 @@ import android.webkit.WebViewClient
 import androidx.webkit.WebViewFeature
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.data.BrowserPreferences
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class BrowserWebViewClient(
     private val callbacks: BrowserCallbacks
@@ -41,6 +43,14 @@ class BrowserWebViewClient(
     /** URL of the page shown in this WebView; read from WebView's network threads. */
     @Volatile
     private var pageUrl: String? = null
+
+    /** Requests and redirects blocked on the current page; counted on WebView's network threads. */
+    private val blockedCount = AtomicInteger()
+    private val blockedCountUpdatePending = AtomicBoolean()
+
+    /** Whether the page being started was loaded from the network, which already reset [blockedCount]. */
+    @Volatile
+    private var mainFrameRequested = false
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val uri = request.url
@@ -68,6 +78,8 @@ class BrowserWebViewClient(
             view.setTag(R.id.webview_popup_opener_url_tag, null)
             callbacks.onPopupBlocked()
         } else {
+            blockedCount.incrementAndGet()
+            publishBlockedCount(view)
             callbacks.onAdRedirectBlocked()
         }
         return true
@@ -85,17 +97,39 @@ class BrowserWebViewClient(
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
         if (request.isForMainFrame) {
             pageUrl = request.url?.toString()
+            mainFrameRequested = true
+            blockedCount.set(0)
+            publishBlockedCount(view)
         }
         if (AdBlocker.shouldBlock(request, pageUrl)) {
+            blockedCount.incrementAndGet()
+            publishBlockedCount(view)
             return AdBlocker.blockedResponse()
         }
         return super.shouldInterceptRequest(view, request)
+    }
+
+    /** Hands the count to the UI; coalesced, since a page can block hundreds of requests at once. */
+    private fun publishBlockedCount(view: WebView) {
+        if (!blockedCountUpdatePending.compareAndSet(false, true)) return
+        view.post {
+            blockedCountUpdatePending.set(false)
+            val count = blockedCount.get()
+            view.setTag(R.id.webview_ads_blocked_count_tag, count)
+            callbacks.onAdsBlockedChanged(count)
+        }
     }
 
     override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
         val stringUrl = url ?: return
         pageUrl = stringUrl
+        // Pages restored from the back/forward cache never pass through shouldInterceptRequest.
+        if (!mainFrameRequested) {
+            blockedCount.set(0)
+            publishBlockedCount(view)
+        }
+        mainFrameRequested = false
         // A pop-up's first page load does not always pass through shouldOverrideUrlLoading.
         if (view.getTag(R.id.webview_popup_opener_url_tag) != null && blockAdNavigation(view, stringUrl)) {
             return

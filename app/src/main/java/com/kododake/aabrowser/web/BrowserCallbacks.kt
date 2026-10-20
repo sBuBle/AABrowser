@@ -43,5 +43,7 @@ data class BrowserCallbacks(
     val onCreateNewWindow: () -> android.webkit.WebView? = { null },
     val onPopupBlocked: () -> Unit = {},
     val onAdRedirectBlocked: () -> Unit = {},
+    /** The number of ads blocked on the current page changed; called on the main thread. */
+    val onAdsBlockedChanged: (Int) -> Unit = {},
     val onRenderProcessGone: (Boolean) -> Unit = {}
 )

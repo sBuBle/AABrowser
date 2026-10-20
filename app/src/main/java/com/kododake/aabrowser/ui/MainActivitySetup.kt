@@ -32,6 +32,7 @@ import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.navigation.NavigationManager
 import com.kododake.aabrowser.startpage.StartPageManager
 import com.kododake.aabrowser.tabs.TabManager
+import com.kododake.aabrowser.web.AdBlocker
 
 class MainActivitySetup(
     private val activity: Activity,
@@ -124,6 +125,19 @@ class MainActivitySetup(
                 BrowserPreferences.setDesktopMode(activity, isChecked)
                 actions.onDesktopModeChanged(isChecked)
                 managers.uiManager.menuHelper.stateHolder.isDesktopMode = isChecked
+            },
+            onAdBlockToggle = { block ->
+                val site = AdBlocker.siteOf(managers.tabManager.activeTab?.currentUrl)
+                if (block && !AdBlocker.isEnabled) {
+                    // Turned off everywhere in settings: the switch turns it back on everywhere.
+                    BrowserPreferences.setAdBlockerEnabled(activity, true)
+                    if (site != null) AdBlocker.setSiteAllowed(activity, site, allowed = false)
+                    managers.tabManager.updateAdBlocker(true)
+                } else if (site != null) {
+                    AdBlocker.setSiteAllowed(activity, site, allowed = !block)
+                    actions.getWebView()?.reload()
+                }
+                managers.uiManager.refreshAdBlockMenuState()
             },
             onFullscreenToggle = { isChecked ->
                 BrowserPreferences.setFullscreenMode(activity, isChecked)

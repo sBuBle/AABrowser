@@ -34,6 +34,12 @@ class MenuStateHolder {
     var canQrCode by mutableStateOf(false)
     var isDesktopMode by mutableStateOf(false)
     var isFullscreenMode by mutableStateOf(false)
+
+    /** Site shown in the ad blocker card; null hides the card (start page, non-web pages). */
+    var adBlockSite by mutableStateOf<String?>(null)
+    var isAdBlockerEnabled by mutableStateOf(true)
+    var isAdBlockActiveOnSite by mutableStateOf(true)
+    var adsBlockedCount by mutableStateOf(0)
     var versionName by mutableStateOf("unknown")
     var isMenuVisible by mutableStateOf(false)
     var isReturningFromSubscreen by mutableStateOf(false)

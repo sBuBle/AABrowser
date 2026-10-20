@@ -134,13 +134,29 @@
     <string name="settings_ad_blocker">Ad blocker</string>
     <string name="settings_ad_blocker_description">Blocks ads, trackers, pop-ups and redirects to ad pages for faster page loads and smoother streaming, and skips YouTube video ads.\nEnabled by default.</string>
     <string name="settings_ad_block_lists">Ad block filter lists</string>
-    <string name="settings_ad_block_lists_status">EasyList, EasyPrivacy and Peter Lowe\'s list\n%1$s rules · Updated %2$s · Tap to update</string>
-    <string name="settings_ad_block_lists_never_updated">EasyList, EasyPrivacy and Peter Lowe\'s list\nNot downloaded yet · Tap to download</string>
+    <string name="settings_ad_block_lists_status">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\n%1$s rules · Updated %2$s · Tap to update</string>
+    <string name="settings_ad_block_lists_never_updated">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\nNot downloaded yet · Tap to download</string>
     <string name="settings_ad_block_lists_updating">Updating filter lists…</string>
     <string name="settings_ad_block_lists_updated">Filter lists updated</string>
     <string name="settings_ad_block_lists_update_failed">Couldn\'t update filter lists. Check your connection and try again.</string>
     <string name="popup_blocked">Pop-up ad blocked</string>
     <string name="ad_redirect_blocked">Redirect to an ad page blocked</string>
+    <string name="menu_ad_blocker">Ad blocker</string>
+    <plurals name="menu_ad_blocker_count">
+        <item quantity="one">%1$d ad or tracker blocked on this page</item>
+        <item quantity="other">%1$d ads and trackers blocked on this page</item>
+    </plurals>
+    <string name="menu_ad_blocker_site_off">Off for %1$s</string>
+    <string name="menu_ad_blocker_off">Off everywhere · Turn on to block ads</string>
+    <string name="settings_ad_block_title">Ad blocking</string>
+    <string name="settings_ad_block_allowed_sites">Sites where ads are allowed</string>
+    <plurals name="settings_ad_block_allowed_sites_count">
+        <item quantity="one">%1$d site · Tap to manage</item>
+        <item quantity="other">%1$d sites · Tap to manage</item>
+    </plurals>
+    <string name="settings_ad_block_allowed_sites_none">None · Turn the ad blocker off for a site from the browser menu</string>
+    <string name="settings_ad_block_allowed_sites_empty">No sites yet. To allow ads on a site, open the browser menu on that site and turn off the ad blocker.</string>
+    <string name="settings_ad_block_allowed_site_remove">Block ads on %1$s again</string>
     <string name="settings_clear_site_permissions">Reset saved site permissions</string>
     <string name="settings_clear_cookies">Delete cookies and site data</string>
     <string name="settings_clear_http_hosts">Reset HTTP allowed hosts</string>
