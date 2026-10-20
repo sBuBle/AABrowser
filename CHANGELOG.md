@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- The phone and the car screen now share the same tabs: pages opened, closed or switched on one show up on the other when you turn to it, and one screen no longer overwrites the tabs saved by the other.
 - Added a bottom toolbar on the phone (back, forward, address, tabs, menu), like other mobile browsers; the car screen and full screen mode keep the floating button. It can be turned off under In-app controls.
 - The browser menu now uses two columns on wide, short screens (car displays, phones in landscape), so it fits without scrolling, and sizes itself to the screen height.
 - Sheets no longer stretch across very wide screens, and the menu footer buttons are larger touch targets.

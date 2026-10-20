@@ -17,23 +17,15 @@
 
 package com.kododake.aabrowser.tabs
 
-import android.content.Context
 import com.kododake.aabrowser.data.BrowserPreferences
 
 object TabStateStore {
 
-    fun persistTabSession(
-        context: Context,
-        browserTabs: List<BrowserTab>,
-        activeTabId: Long?
-    ) {
-        val entries = browserTabs.map { tab ->
+    fun sessionEntries(browserTabs: List<BrowserTab>): List<BrowserPreferences.TabSessionEntry> =
+        browserTabs.map { tab ->
             BrowserPreferences.TabSessionEntry(
                 url = tab.currentUrl.takeIf { u -> u.isNotBlank() },
                 title = tab.currentTitle.takeIf { t -> t.isNotBlank() }
             )
         }
-        val activeIndex = browserTabs.indexOfFirst { it.id == activeTabId }.coerceAtLeast(0)
-        BrowserPreferences.persistTabSession(context, entries, activeIndex)
-    }
 }
