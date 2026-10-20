@@ -47,6 +47,7 @@ import com.kododake.aabrowser.BuildConfig
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.components.ExpressiveLoadingIndicator
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
+import com.kododake.aabrowser.ui.compose.screens.version.isUpToDate
 import com.kododake.aabrowser.ui.compose.theme.ExpressiveTypography
 
 @Composable
@@ -58,10 +59,7 @@ fun VersionCheckDialog(
     onDismiss: () -> Unit
 ) {
     val currentVersion = "v${BuildConfig.VERSION_NAME}"
-    val isUpToDate = latestVersion != null && latestVersion.trim().removePrefix("v").equals(
-        BuildConfig.VERSION_NAME.trim().removePrefix("v"),
-        ignoreCase = true
-    )
+    val isUpToDate = isUpToDate(BuildConfig.VERSION_NAME, latestVersion)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -118,7 +116,7 @@ fun VersionCheckDialog(
 
                     Text(
                         text = if (isUpToDate) {
-                            stringResource(R.string.check_latest_up_to_date, latestVersion)
+                            stringResource(R.string.check_latest_up_to_date, latestVersion.orEmpty())
                         } else {
                             stringResource(R.string.check_latest_update_available, latestVersion.orEmpty())
                         },

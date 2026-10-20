@@ -157,7 +157,7 @@ fun NavigationSettingsComposable(
                     showHomePageDialog = false
                     onHomePageChanged()
                 }) {
-                    Text(stringResource(android.R.string.ok))
+                    Text(stringResource(R.string.dialog_ok))
                 }
             },
             dismissButton = {

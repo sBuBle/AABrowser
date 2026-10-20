@@ -56,10 +56,7 @@ fun VersionCheckSheet(
     onProgress: (Float) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val isUpToDate = latestVersion != null && latestVersion.trim().removePrefix("v").equals(
-        installedVersion.trim().removePrefix("v"),
-        ignoreCase = true
-    )
+    val isUpToDate = isUpToDate(installedVersion, latestVersion)
 
     ExpressiveBottomSheetContainer(
         isVisible = isVisible,

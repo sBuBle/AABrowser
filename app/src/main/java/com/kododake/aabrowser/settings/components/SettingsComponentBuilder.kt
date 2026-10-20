@@ -129,7 +129,7 @@ class SettingsComponentBuilder(private val context: Context) {
         MaterialAlertDialogBuilder(context, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
             .setTitle(title)
             .setMessage(message)
-            .setPositiveButton(android.R.string.ok, null)
+            .setPositiveButton(R.string.dialog_ok, null)
             .show()
     }
 
@@ -141,7 +141,7 @@ class SettingsComponentBuilder(private val context: Context) {
         MaterialAlertDialogBuilder(context, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
             .setTitle(title)
             .setMessage(message)
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNegativeButton(R.string.dialog_cancel, null)
             .setPositiveButton(R.string.settings_action_delete) { _, _ -> onConfirm() }
             .show()
     }

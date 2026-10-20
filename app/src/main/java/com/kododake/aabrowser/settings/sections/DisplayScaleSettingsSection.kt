@@ -85,8 +85,8 @@ object DisplayScaleSettingsSection {
                         MaterialAlertDialogBuilder(context, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
                             .setTitle("Enter Custom Zoom")
                             .setView(inputLayout)
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .setPositiveButton(android.R.string.ok) { _, _ ->
+                            .setNegativeButton(R.string.dialog_cancel, null)
+                            .setPositiveButton(R.string.dialog_ok) { _, _ ->
                                 val entered = input.text?.toString()?.trim().orEmpty()
                                 val value = entered.toIntOrNull()
                                 if (value != null) {

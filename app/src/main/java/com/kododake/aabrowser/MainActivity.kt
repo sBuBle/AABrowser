@@ -30,7 +30,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.isVisible
 import com.google.android.material.color.DynamicColors
-import com.kododake.aabrowser.AppConstants.REQUEST_CODE_POST_NOTIFICATIONS
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.main.BrowserManagers
@@ -130,7 +129,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         setupBackPressHandling()
         networkStateMonitor.start()
 
-        managers.permissionManager.ensureNotificationPermissionIfNeeded(REQUEST_CODE_POST_NOTIFICATIONS)
         FreeDroidWarnHelper.checkAndShow(this, managers.themeManager.resolveThemeColor(androidx.appcompat.R.attr.colorError)) { url ->
             managers.navigationManager.loadUrlFromIntent(url)
         }

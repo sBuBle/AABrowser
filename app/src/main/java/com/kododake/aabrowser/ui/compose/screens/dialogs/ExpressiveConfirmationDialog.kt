@@ -73,7 +73,7 @@ fun ExpressiveConfirmationContent(
     onConfirm: (() -> Unit)? = null,
     secondaryButtonText: String? = null,
     onSecondary: (() -> Unit)? = null,
-    dismissButtonText: String = stringResource(android.R.string.cancel),
+    dismissButtonText: String = stringResource(R.string.dialog_cancel),
     onDismiss: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -223,7 +223,7 @@ fun ExpressiveConfirmationDialog(
     onConfirm: (() -> Unit)? = null,
     secondaryButtonText: String? = null,
     onSecondary: (() -> Unit)? = null,
-    dismissButtonText: String = stringResource(android.R.string.cancel),
+    dismissButtonText: String = stringResource(R.string.dialog_cancel),
     onDismiss: () -> Unit
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
@@ -256,7 +256,7 @@ fun CleartextWarningDialog(
         title = stringResource(R.string.cleartext_connection_title),
         message = stringResource(R.string.cleartext_connection_message, url),
         isDestructive = true,
-        confirmButtonText = stringResource(android.R.string.ok),
+        confirmButtonText = stringResource(R.string.dialog_ok),
         onConfirm = onProceed,
         onDismiss = onDismiss
     )

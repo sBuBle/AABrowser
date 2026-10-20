@@ -41,10 +41,20 @@
       return params.get(name) || '';
     }
 
-    const failed = decodeURIComponent(getParam('failedUrl') || '')
+    // URLSearchParams already decodes; only web URLs may be retried or opened.
+    function webUrlOrEmpty(raw) {
+      try {
+        const url = new URL(raw)
+        return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : ''
+      } catch (e) {
+        return ''
+      }
+    }
+
+    const failed = webUrlOrEmpty(getParam('failedUrl'))
     const httpStatus = getParam('httpStatus') || ''
     const code = getParam('code') || httpStatus || ''
-    const message = decodeURIComponent(getParam('message') || '')
+    const message = getParam('message')
 
     if (code || message) {
       const info = document.createElement('p')
@@ -62,10 +72,11 @@
     })
 
     document.getElementById('openExternal').addEventListener('click', function() {
+      if (!failed) return
       if (typeof Android !== 'undefined' && Android.openExternal) {
-        try { Android.openExternal(failed || '') } catch (e) { window.open(failed || '', '_blank') }
+        try { Android.openExternal(failed) } catch (e) { window.open(failed, '_blank') }
       } else {
-        window.open(failed || '', '_blank')
+        window.open(failed, '_blank')
       }
     })
   </script>

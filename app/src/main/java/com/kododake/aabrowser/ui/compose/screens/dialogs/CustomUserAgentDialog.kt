@@ -140,7 +140,7 @@ fun CustomUserAgentDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text(stringResource(android.R.string.cancel))
+                        Text(stringResource(R.string.dialog_cancel))
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(onClick = submit) {

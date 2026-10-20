@@ -29,6 +29,7 @@ import com.kododake.aabrowser.data.SiteIconCache
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.tabs.BrowserTab
 import com.kododake.aabrowser.web.BrowserCallbacks
+import com.kododake.aabrowser.web.ErrorPage
 import com.kododake.aabrowser.web.RedirectBlocker
 import com.kododake.aabrowser.web.SiteExceptionList
 
@@ -45,7 +46,8 @@ class WebBrowserCallbackFactory(
 
     fun build(tab: BrowserTab): BrowserCallbacks {
         return BrowserCallbacks(
-            onUrlChange = { url ->
+            onUrlChange = { rawUrl ->
+                val url = ErrorPage.displayUrl(rawUrl)
                 activity.runOnUiThread {
                     provider.tabManager.updateTabUrl(tab.id, url)
                     BrowserPreferences.persistUrl(activity, url)

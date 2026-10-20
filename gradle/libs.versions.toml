@@ -11,13 +11,15 @@ composeBom = "2026.09.00"
 carApp = "1.7.0"
 appcompat = "1.8.0"
 material = "1.14.0"
-composeMaterial3 = "1.5.0-alpha29"
+composeMaterial3 = "1.5.0-beta01"
 constraintlayout = "2.2.2"
 zxing = "3.5.4"
 okhttp = "5.5.0"
-kotlinxSerializationJson = "1.11.0"
+kotlinxSerializationJson = "1.12.0"
 ossLicenses = "17.5.2"
 webkit = "1.17.1"
+freeDroidWarn = "V1.14"
+ossLicensesPlugin = "0.13.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,6 +48,8 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 google-oss-licenses = { group = "com.google.android.gms", name = "play-services-oss-licenses", version.ref = "ossLicenses" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
+freedroidwarn = { group = "com.github.woheller69", name = "FreeDroidWarn", version.ref = "freeDroidWarn" }
+oss-licenses-plugin = { group = "com.google.android.gms", name = "oss-licenses-plugin", version.ref = "ossLicensesPlugin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

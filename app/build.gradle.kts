@@ -46,8 +46,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Installs next to the signed release instead of clashing with its signature.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -130,7 +136,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.google.oss.licenses)
-    implementation("com.github.woheller69:FreeDroidWarn:V1.+")
+    implementation(libs.freedroidwarn)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

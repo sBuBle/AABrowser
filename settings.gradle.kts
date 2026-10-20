@@ -19,7 +19,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io")
+        // JitPack builds artifacts from any GitHub repo, so only let it serve the one library we
+        // need from it; everything else must come from Google or Maven Central.
+        exclusiveContent {
+            forRepository { maven("https://jitpack.io") }
+            filter { includeGroup("com.github.woheller69") }
+        }
     }
 }
 

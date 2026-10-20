@@ -18,24 +18,44 @@
 package com.kododake.aabrowser.web
 
 import android.app.Activity
-import android.net.Uri
 import android.net.http.SslError
 import android.view.WindowManager
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.runtime.mutableStateSetOf
+import androidx.core.net.toUri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.screens.dialogs.DialogViews
+import java.security.MessageDigest
 
 object SslErrorHandlerHelper {
 
-    private val allowedSslHosts = HashSet<String>()
+    /**
+     * Certificates the user chose to trust anyway, as "host|SHA-256 of the certificate". Tied to the
+     * certificate, like Chrome, so a different (possibly attacker's) certificate for the same host
+     * asks again instead of being let through silently.
+     */
+    private val allowedSslExceptions = HashSet<String>()
+
+    /**
+     * Hosts in [allowedSslExceptions], so the address bar can drop the padlock for them. Snapshot
+     * state, so an address bar already showing the page updates when the exception is added.
+     */
+    private val hostsWithExceptions = mutableStateSetOf<String>()
+
+    /** Whether the user let an invalid certificate through for [url]'s host this session. */
+    fun hasCertificateException(url: String): Boolean {
+        val host = runCatching { url.toUri().host?.lowercase() }.getOrNull() ?: return false
+        return host in hostsWithExceptions
+    }
 
     fun handleSslError(activity: Activity, handler: SslErrorHandler, error: SslError) {
         val url = error.url ?: ""
-        val host = runCatching { Uri.parse(url).host?.lowercase() }.getOrNull()
+        val host = runCatching { url.toUri().host?.lowercase() }.getOrNull()
+        val exceptionKey = host?.let { h -> certificateFingerprint(error)?.let { "$h|$it" } }
 
-        if (host != null && allowedSslHosts.contains(host)) {
+        if (exceptionKey != null && exceptionKey in allowedSslExceptions) {
             handler.proceed()
             return
         }
@@ -61,8 +81,9 @@ object SslErrorHandlerHelper {
             confirmButtonText = activity.getString(R.string.ssl_error_proceed),
             onConfirm = {
                 try { dialog?.dismiss() } catch (_: Exception) {}
-                if (host != null) {
-                    allowedSslHosts.add(host)
+                if (exceptionKey != null && host != null) {
+                    allowedSslExceptions.add(exceptionKey)
+                    hostsWithExceptions.add(host)
                 }
                 handler.proceed()
             },
@@ -98,7 +119,13 @@ object SslErrorHandlerHelper {
         }
     }
 
+    private fun certificateFingerprint(error: SslError): String? = runCatching {
+        val encoded = error.certificate.x509Certificate?.encoded ?: return null
+        MessageDigest.getInstance("SHA-256").digest(encoded).toHexString()
+    }.getOrNull()
+
     fun clearAllowedSslHosts() {
-        allowedSslHosts.clear()
+        allowedSslExceptions.clear()
+        hostsWithExceptions.clear()
     }
 }

@@ -21,9 +21,12 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.sp
 
-val ExpressiveTypography = Typography(
+val ExpressiveTypography = baseTypography().withContentTextDirection()
+
+private fun baseTypography() = Typography(
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
@@ -61,3 +64,30 @@ val ExpressiveTypography = Typography(
         lineHeight = 20.sp
     )
 )
+
+/**
+ * Compose lays text out in the layout direction by default, so on a right-to-left system the
+ * app's English strings get RTL paragraphs and their punctuation jumps to the wrong end
+ * (".Quick access for the sites you use most"). Letting each text follow its own characters keeps
+ * English left-to-right and page titles in Hebrew or Arabic right-to-left.
+ */
+private fun Typography.withContentTextDirection(): Typography {
+    fun TextStyle.contentDirection() = copy(textDirection = TextDirection.Content)
+    return copy(
+        displayLarge = displayLarge.contentDirection(),
+        displayMedium = displayMedium.contentDirection(),
+        displaySmall = displaySmall.contentDirection(),
+        headlineLarge = headlineLarge.contentDirection(),
+        headlineMedium = headlineMedium.contentDirection(),
+        headlineSmall = headlineSmall.contentDirection(),
+        titleLarge = titleLarge.contentDirection(),
+        titleMedium = titleMedium.contentDirection(),
+        titleSmall = titleSmall.contentDirection(),
+        bodyLarge = bodyLarge.contentDirection(),
+        bodyMedium = bodyMedium.contentDirection(),
+        bodySmall = bodySmall.contentDirection(),
+        labelLarge = labelLarge.contentDirection(),
+        labelMedium = labelMedium.contentDirection(),
+        labelSmall = labelSmall.contentDirection()
+    )
+}

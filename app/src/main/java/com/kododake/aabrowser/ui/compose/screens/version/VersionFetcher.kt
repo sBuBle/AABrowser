@@ -18,11 +18,15 @@
 package com.kododake.aabrowser.ui.compose.screens.version
 
 import android.app.Activity
+import androidx.core.net.toUri
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
 object VersionFetcher {
+
+    private const val LATEST_RELEASE_API = "https://api.github.com/repos/kododake/AABrowser/releases/latest"
+    private const val MAX_RESPONSE_CHARS = 512 * 1024
 
     fun fetchLatestVersion(
         activity: Activity,
@@ -30,26 +34,47 @@ object VersionFetcher {
         onError: () -> Unit
     ) {
         Thread {
+            var conn: HttpURLConnection? = null
             try {
-                val url = URL("https://api.github.com/repos/kododake/AABrowser/releases/latest")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                conn = (URL(LATEST_RELEASE_API).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10_000
+                    readTimeout = 15_000
+                    setRequestProperty("Accept", "application/vnd.github+json")
+                    setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+                }
 
-                if (conn.responseCode == 200) {
-                    val response = conn.inputStream.bufferedReader().use { it.readText() }
+                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                    val response = conn.inputStream.bufferedReader().use { reader ->
+                        val buffer = CharArray(MAX_RESPONSE_CHARS)
+                        var length = 0
+                        while (length < buffer.size) {
+                            val read = reader.read(buffer, length, buffer.size - length)
+                            if (read < 0) break
+                            length += read
+                        }
+                        String(buffer, 0, length)
+                    }
                     val json = JSONObject(response)
-                    val latestUrl = json.getString("html_url")
+                    // The link is opened in the browser later, so only accept a GitHub page.
+                    val latestUrl = json.getString("html_url").takeIf(::isGitHubPage)
                     val tag = json.getString("tag_name")
 
                     activity.runOnUiThread {
-                        onSuccess(latestUrl, tag)
+                        if (latestUrl != null) onSuccess(latestUrl, tag) else onError()
                     }
                 } else {
                     activity.runOnUiThread { onError() }
                 }
             } catch (_: Exception) {
                 activity.runOnUiThread { onError() }
+            } finally {
+                conn?.disconnect()
             }
         }.start()
+    }
+
+    private fun isGitHubPage(url: String): Boolean {
+        val uri = runCatching { url.toUri() }.getOrNull() ?: return false
+        return uri.scheme == "https" && uri.host == "github.com"
     }
 }
