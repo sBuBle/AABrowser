@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Fixed the back gesture (and back key) doing nothing after opening a page from the address bar or closing a sheet by swiping, and leaving the app instead of going back after the app had been in the background.
+- The ad blocker now blocks YouTube video ads: it removes the ads from YouTube's player data, like uBlock Origin, and skips any ad that still starts. Sites where you allowed ads no longer get the built-in ad hiding either.
 - Added in-app updates from GitHub releases: "Check for Updates" now offers "Update now", which downloads only the changes since the installed version (about 1 MB instead of about 10 MB), rebuilds and checks the new version on the phone and installs it. After you allow AABrowser to install apps once, later updates install without a prompt. Releases without update files still link to the release page.
 - Security: backups and device-to-device transfer no longer copy the browser's cookies and site data, which could hand signed-in sessions to another device.
 - Security: HTTPS pages can no longer load insecure scripts or frames over HTTP (images and media still load, like in Chrome), and web pages can no longer open local files, other apps' content or top-level `data:` URLs.

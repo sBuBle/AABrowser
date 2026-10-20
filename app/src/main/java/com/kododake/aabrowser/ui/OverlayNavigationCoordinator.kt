@@ -140,6 +140,18 @@ class OverlayNavigationCoordinator(
     }
 
     fun handleBackPressed(): Boolean {
+        val anythingShown = binding.menuOverlay.isVisible || binding.menuComposeView.isVisible ||
+            binding.settingsComposeView.isVisible || binding.bookmarkComposeView.isVisible ||
+            binding.tabComposeView.isVisible || binding.qrCodeComposeView.isVisible ||
+            binding.versionComposeView.isVisible
+        if (!anythingShown) {
+            // currentScreen is only reset by hideAll(); a menu closed another way (opening a page
+            // from the address bar, swiping a sheet away) would otherwise keep swallowing every
+            // back gesture instead of letting the page go back.
+            currentScreen = OverlayScreen.NONE
+            isSubscreenOpenedFromMenu = false
+            return false
+        }
         if (binding.settingsComposeView.isVisible || currentScreen == OverlayScreen.SETTINGS) {
             if (isSubscreenOpenedFromMenu || overlayManager.isSettingsOpenedFromMenu) {
                 returnToMenu()

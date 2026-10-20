@@ -96,8 +96,14 @@ object WebScripts {
 
     /**
      * Cosmetic part of the ad blocker: hides ad containers using the filter lists' element hiding
-     * rules (fetched from the native `AABAdBlock` bridge) plus a few built-in selectors, and skips
-     * YouTube video ads, which are served from the same hosts as the videos themselves.
+     * rules (fetched from the native `AABAdBlock` bridge) plus a few built-in selectors.
+     *
+     * YouTube serves its ads from the same hosts and in the same responses as the videos, so
+     * blocking requests does nothing there. Like uBlock Origin's YouTube filters, the script removes
+     * the ad schedule (adPlacements, playerAds, adSlots) from the player data before the player
+     * reads it: in ytInitialPlayerResponse, JSON.parse results and the player API's fetch and XHR
+     * responses. An ad that still starts is muted, sped up, skipped to its end and its Skip button
+     * pressed; the video's own volume and speed are restored afterwards.
      *
      * Generic rules are only requested for the class and id names actually present in the page,
      * as uBlock Origin does, instead of injecting the thousands of selectors EasyList contains.
@@ -111,6 +117,12 @@ object WebScripts {
             } catch (_) {
                 return;
             }
+
+            const bridge = window.AABAdBlock;
+            // Sites the user allowed ads on get none of this, built-in rules included.
+            try {
+                if (bridge && bridge.isActive && !bridge.isActive(location.href)) return;
+            } catch (_) {}
 
             const css = [
                 'ins.adsbygoogle',
@@ -138,10 +150,14 @@ object WebScripts {
                 'ad-slot-renderer',
                 'ytm-companion-ad-renderer',
                 'ytm-promoted-sparkles-web-renderer',
-                'ytm-promoted-video-renderer'
+                'ytm-promoted-video-renderer',
+                'ytm-companion-slot',
+                'ytd-companion-slot-renderer',
+                '.ytp-ad-module',
+                '.ytp-ad-image-overlay',
+                'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]'
             ].join(',') + '{display:none !important;}';
 
-            const bridge = window.AABAdBlock;
             let isTopFrame = true;
             try { isTopFrame = window.top === window; } catch (_) { isTopFrame = false; }
 
@@ -223,20 +239,173 @@ object WebScripts {
                 host === 'youtube-nocookie.com' || host.endsWith('.youtube-nocookie.com');
             if (!isYouTube) return;
 
+            const AD_KEYS = ['adPlacements', 'playerAds', 'adSlots'];
+            const AD_API = /\/youtubei\/v1\/(player|next|reel)|\/(player|get_watch)\?/;
+            const nativeParse = JSON.parse;
+
+            function hasAdKeys(text) {
+                return typeof text === 'string' && (text.indexOf('"adPlacements"') >= 0 ||
+                    text.indexOf('"playerAds"') >= 0 || text.indexOf('"adSlots"') >= 0);
+            }
+            // Removes the ad schedule from a player response, or from objects and arrays wrapping one.
+            function pruneAds(data) {
+                if (!data || typeof data !== 'object') return false;
+                const targets = [data, data.playerResponse];
+                if (Array.isArray(data)) {
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i] && typeof data[i] === 'object') targets.push(data[i], data[i].playerResponse);
+                    }
+                }
+                let changed = false;
+                for (let i = 0; i < targets.length; i++) {
+                    const target = targets[i];
+                    if (!target || typeof target !== 'object') continue;
+                    for (let k = 0; k < AD_KEYS.length; k++) {
+                        if (Object.prototype.hasOwnProperty.call(target, AD_KEYS[k])) {
+                            delete target[AD_KEYS[k]];
+                            changed = true;
+                        }
+                    }
+                }
+                return changed;
+            }
+            function prunedText(text) {
+                if (!hasAdKeys(text)) return text;
+                try {
+                    const data = nativeParse(text);
+                    return pruneAds(data) ? JSON.stringify(data) : text;
+                } catch (_) {
+                    return text;
+                }
+            }
+            function looksNative(patched, original) {
+                try {
+                    Object.defineProperty(patched, 'name', { value: original.name });
+                    patched.toString = function() { return 'function ' + original.name + '() { [native code] }'; };
+                } catch (_) {}
+            }
+
+            // Data embedded in the page.
+            let initialPlayerResponse;
+            try {
+                Object.defineProperty(window, 'ytInitialPlayerResponse', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() { return initialPlayerResponse; },
+                    set: function(value) {
+                        try { pruneAds(value); } catch (_) {}
+                        initialPlayerResponse = value;
+                    }
+                });
+            } catch (_) {}
+
+            const parse = function parse(text, reviver) {
+                const result = nativeParse.apply(this, arguments);
+                try { pruneAds(result); } catch (_) {}
+                return result;
+            };
+            looksNative(parse, nativeParse);
+            JSON.parse = parse;
+
+            // Player API responses.
+            const nativeFetch = window.fetch;
+            if (nativeFetch) {
+                const fetchPatched = function fetch(input, init) {
+                    const promise = nativeFetch.apply(this, arguments);
+                    let url = '';
+                    try { url = typeof input === 'string' ? input : (input && input.url) || ''; } catch (_) {}
+                    if (!AD_API.test(url)) return promise;
+                    return promise.then(function(response) {
+                        return response.clone().text().then(function(text) {
+                            const pruned = prunedText(text);
+                            if (pruned === text) return response;
+                            const patched = new Response(pruned, {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: response.headers
+                            });
+                            try { Object.defineProperty(patched, 'url', { value: response.url }); } catch (_) {}
+                            return patched;
+                        }).catch(function() { return response; });
+                    });
+                };
+                looksNative(fetchPatched, nativeFetch);
+                window.fetch = fetchPatched;
+            }
+
+            try {
+                const xhrProto = XMLHttpRequest.prototype;
+                const nativeOpen = xhrProto.open;
+                const adRequests = new WeakMap();
+                const prunedResponses = new WeakMap();
+                const openPatched = function open(method, url) {
+                    try { adRequests.set(this, AD_API.test(String(url))); } catch (_) {}
+                    return nativeOpen.apply(this, arguments);
+                };
+                looksNative(openPatched, nativeOpen);
+                xhrProto.open = openPatched;
+                const textGetter = Object.getOwnPropertyDescriptor(xhrProto, 'responseText').get;
+                const responseGetter = Object.getOwnPropertyDescriptor(xhrProto, 'response').get;
+                function prunedXhrText(xhr, text) {
+                    if (!adRequests.get(xhr) || xhr.readyState !== 4) return text;
+                    if (!prunedResponses.has(xhr)) prunedResponses.set(xhr, prunedText(text));
+                    return prunedResponses.get(xhr);
+                }
+                Object.defineProperty(xhrProto, 'responseText', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() { return prunedXhrText(this, textGetter.call(this)); }
+                });
+                Object.defineProperty(xhrProto, 'response', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() {
+                        const value = responseGetter.call(this);
+                        if (this.responseType === '' || this.responseType === 'text') return prunedXhrText(this, value);
+                        if (this.responseType === 'json' && adRequests.get(this)) {
+                            try { pruneAds(value); } catch (_) {}
+                        }
+                        return value;
+                    }
+                });
+            } catch (_) {}
+
+            // Ads that still play: mute, speed up, jump to the end and press Skip, then restore.
+            const SKIP_BUTTONS = '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, ' +
+                '.ytp-ad-skip-button-container button, button[class*="skip-ad"], button[class*="ad-skip"]';
+            let adVideo = null;
+            let savedMuted = false;
+            let savedRate = 1;
             setInterval(function() {
                 if (document.hidden) return;
-                const player = document.querySelector('.html5-video-player.ad-showing');
-                if (!player) return;
-                const skipButton = player.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
-                if (skipButton) {
-                    skipButton.click();
+                const player = document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting');
+                if (!player) {
+                    if (adVideo) {
+                        try {
+                            adVideo.muted = savedMuted;
+                            adVideo.playbackRate = savedRate;
+                        } catch (_) {}
+                        adVideo = null;
+                    }
                     return;
                 }
+                const skipButton = player.querySelector(SKIP_BUTTONS) || document.querySelector(SKIP_BUTTONS);
+                if (skipButton) skipButton.click();
                 const video = player.querySelector('video');
-                if (video && isFinite(video.duration) && video.duration > 0 && video.currentTime < video.duration - 0.1) {
-                    try { video.currentTime = video.duration; } catch (_) {}
+                if (!video) return;
+                if (adVideo !== video) {
+                    adVideo = video;
+                    savedMuted = video.muted;
+                    savedRate = video.playbackRate || 1;
                 }
-            }, 400);
+                try {
+                    video.muted = true;
+                    video.playbackRate = 16;
+                    if (isFinite(video.duration) && video.duration > 0 && video.currentTime < video.duration - 0.1) {
+                        video.currentTime = video.duration;
+                    }
+                } catch (_) {}
+            }, 300);
         })();
     """.trimIndent()
 

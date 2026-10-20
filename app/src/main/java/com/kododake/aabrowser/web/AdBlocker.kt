@@ -163,6 +163,10 @@ object AdBlocker {
 
     /** Exposed to pages as `AABAdBlock` for the element hiding part of [WebScripts.AD_BLOCK_COSMETIC_JS]. */
     class CosmeticBridge {
+        /** Whether ads are blocked on [pageUrl]: the blocker is on and the site is not allowed. */
+        @JavascriptInterface
+        fun isActive(pageUrl: String?): Boolean = isActiveFor(pageUrl)
+
         @JavascriptInterface
         fun pageCss(pageUrl: String?, isTopFrame: Boolean): String {
             if (!isEnabled || pageUrl.isNullOrEmpty() || isAllowedSite(pageUrl)) return ""
