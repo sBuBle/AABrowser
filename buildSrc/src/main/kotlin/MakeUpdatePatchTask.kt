@@ -44,6 +44,9 @@ abstract class MakeUpdatePatchTask : DefaultTask() {
         val newFile = newApk.get().asFile
         val newBytes = newFile.readBytes()
         val outDir = outputDir.get().asFile.apply { mkdirs() }
+        // Patches from an earlier run would otherwise sit next to the new files and could be
+        // uploaded by mistake.
+        outDir.listFiles()?.filter { it.extension == "patch" || it.name == "update.json" }?.forEach { it.delete() }
 
         val patches = previousApks.files.sortedBy { it.name }.map { oldFile ->
             val oldBytes = oldFile.readBytes()
