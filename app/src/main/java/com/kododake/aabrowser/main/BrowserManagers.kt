@@ -18,7 +18,6 @@
 package com.kododake.aabrowser.main
 
 import androidx.appcompat.app.AppCompatActivity
-import com.kododake.aabrowser.analytics.UmamiTracker
 import com.kododake.aabrowser.bookmarks.BookmarkManager
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.navigation.NavigationManager
@@ -43,7 +42,6 @@ class BrowserManagers(
     val onProgressChanged: (Int) -> Unit,
     val onNavigationButtonsUpdateNeeded: () -> Unit
 ) : BrowserManagersProvider {
-    override val umamiTracker: UmamiTracker by lazy { UmamiTracker(activity.applicationContext) }
     override val themeManager: ThemeManager by lazy { ThemeManager(activity, binding) }
     override val permissionManager: PermissionManager by lazy { PermissionManager(activity) }
 

@@ -30,7 +30,6 @@ object StartPageViews {
         context: Context,
         slots: List<StartPageSlotUi>,
         hasResumePage: Boolean,
-        sponsorsQrBitmap: Bitmap?,
         customBackgroundBitmapState: State<Bitmap?>? = null,
         customBackgroundBitmapProvider: () -> Bitmap? = { null },
         isNavigatingState: State<Boolean>? = null,
@@ -42,10 +41,8 @@ object StartPageViews {
                 val isNavigating = isNavigatingState?.value ?: false
                 val customBackgroundBitmap = customBackgroundBitmapState?.value ?: customBackgroundBitmapProvider()
                 StartPageScreen(
-                    context = context,
                     slots = slots,
                     hasResumePage = hasResumePage,
-                    sponsorsQrBitmap = sponsorsQrBitmap,
                     customBackgroundBitmap = customBackgroundBitmap,
                     isNavigating = isNavigating,
                     callbacks = callbacks

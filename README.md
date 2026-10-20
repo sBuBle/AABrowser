@@ -60,7 +60,7 @@ After installing, use **Check for Updates** in the app's menu to get new version
 
 - The browser does not collect the pages you visit, your searches or what you type.
 - Backups and device-to-device transfers do not include cookies or site data.
-- The app sends an anonymous "app opened" event with the app version and a random ID to a self-hosted [Umami](https://umami.is/) analytics server run by the original project. The ID is not linked to your device or account.
+- The app has no analytics or telemetry.
 - The update check contacts the GitHub API for this repository.
 
 ## Building from source
