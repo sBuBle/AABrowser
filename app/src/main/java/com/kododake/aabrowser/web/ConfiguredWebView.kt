@@ -69,6 +69,7 @@ fun configureWebView(
                 setTag(R.id.webview_ad_block_script_handler_tag, handler)
             }
             WebViewCompat.addDocumentStartJavaScript(this, WebScripts.MEDIA_STREAM_RECOVERY_JS, setOf("*"))
+            WebViewCompat.addDocumentStartJavaScript(this, WebScripts.MEDIA_BUFFER_TUNING_JS, setOf("*"))
         }
 
         isHorizontalScrollBarEnabled = false
@@ -274,12 +275,15 @@ fun WebView.updateAdBlocker(enabled: Boolean, reload: Boolean = true) {
 }
 
 /**
- * Propagates the device's connectivity to the page (`navigator.onLine` and `online`/`offline`
- * events, which media players use to pause and resume streams) and serves cached copies while
- * offline so back/forward navigation keeps working without a connection.
+ * Serves cached copies while offline so back/forward navigation keeps working without a connection.
+ *
+ * Deliberately does not call [WebView.setNetworkAvailable]: that permanently turns off Chromium's
+ * own connectivity detection for the whole process (AwContents.setNetworkAvailable calls
+ * NetworkChangeNotifier.setAutoDetectConnectivityState(false)), which also stops the network stack
+ * from reacting to Wi-Fi/cellular handovers. With ACCESS_NETWORK_STATE granted, WebView keeps
+ * `navigator.onLine` and the `online`/`offline` events up to date by itself.
  */
 fun WebView.applyNetworkAvailability(available: Boolean) {
-    setNetworkAvailable(available)
     settings.cacheMode = if (available) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_CACHE_ELSE_NETWORK
 }
 
