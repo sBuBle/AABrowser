@@ -128,6 +128,7 @@ class BrowserWebViewClient(
                 view.evaluateJavascript(WebScripts.AD_BLOCK_COSMETIC_JS, null)
             }
             view.evaluateJavascript(WebScripts.MEDIA_STREAM_RECOVERY_JS, null)
+            view.evaluateJavascript(WebScripts.MEDIA_BUFFER_TUNING_JS, null)
         }
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.NAVIGATION_LISTENER)) {
             url?.let(callbacks.onUrlChange)

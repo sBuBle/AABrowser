@@ -28,8 +28,8 @@ import android.util.Log
 /**
  * Watches the system default network and reports when internet connectivity is gained or lost.
  *
- * Losses are debounced so a Wi-Fi to cellular handover (common in a moving car) does not make
- * pages pause their streams; regaining connectivity is reported immediately.
+ * Losses are debounced so a Wi-Fi to cellular handover (common in a moving car) does not flip
+ * tabs into offline loading; regaining connectivity is reported immediately.
  */
 class NetworkStateMonitor(
     context: Context,

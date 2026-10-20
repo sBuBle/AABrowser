@@ -304,8 +304,8 @@ class TabManager(
     }
 
     /**
-     * Pushes connectivity changes to every tab and, once the connection is back, retries tabs
-     * that are showing the offline error page instead of leaving them stuck on it.
+     * Switches every tab between normal and offline (cache-first) loading and, once the connection
+     * is back, retries tabs that are showing the offline error page instead of leaving them stuck on it.
      */
     fun applyNetworkAvailability(available: Boolean) {
         browserTabs.forEach { tab ->
