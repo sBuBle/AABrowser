@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Added in-app updates from GitHub releases: "Check for Updates" now offers "Update now", which downloads only the changes since the installed version (about 1 MB instead of about 10 MB), rebuilds and checks the new version on the phone and installs it. After you allow AABrowser to install apps once, later updates install without a prompt. Releases without update files still link to the release page.
 - Security: backups and device-to-device transfer no longer copy the browser's cookies and site data, which could hand signed-in sessions to another device.
 - Security: HTTPS pages can no longer load insecure scripts or frames over HTTP (images and media still load, like in Chrome), and web pages can no longer open local files, other apps' content or top-level `data:` URLs.
 - Security: "Proceed anyway" on a certificate warning now trusts only that certificate, not any certificate for the site, and the address bar shows the page as not secure instead of a padlock.

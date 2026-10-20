@@ -68,6 +68,15 @@
     <string name="check_latest_view_release">View Latest Release</string>
     <string name="check_latest_up_to_date">You are using the latest version! (v%1$s)</string>
     <string name="check_latest_update_available">New update available! (Latest: %1$s)</string>
+    <string name="update_now">Update now</string>
+    <string name="update_size_patch">Downloads only the changes: %1$s instead of %2$s.</string>
+    <string name="update_size_full">Downloads %1$s.</string>
+    <string name="update_downloading">Downloading update… %1$d%%</string>
+    <string name="update_installing">Installing… AABrowser closes for a moment while it updates.</string>
+    <string name="update_error_network">could not reach the update server. Check your connection.</string>
+    <string name="update_failed">Update failed: %1$s</string>
+    <string name="update_retry">Try again</string>
+    <string name="update_allow_install">Allow AABrowser to install updates, then tap Update now again.</string>
     
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Browser Preferences</string>

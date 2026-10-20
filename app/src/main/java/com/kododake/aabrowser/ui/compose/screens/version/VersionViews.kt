@@ -22,6 +22,7 @@ import android.view.View
 import androidx.compose.runtime.State
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import com.kododake.aabrowser.update.SelfUpdater
 
 object VersionViews {
 
@@ -33,6 +34,7 @@ object VersionViews {
         installedVersion: String,
         releaseUrlState: State<String?>,
         animateEnterProvider: () -> Boolean = { true },
+        onStartUpdate: () -> Unit = {},
         onOpenRelease: (String) -> Unit,
         onClose: () -> Unit,
         onDismissFinished: () -> Unit,
@@ -48,6 +50,8 @@ object VersionViews {
                     latestVersion = latestVersionState.value,
                     installedVersion = installedVersion,
                     releaseUrl = releaseUrlState.value,
+                    updateStatus = SelfUpdater.status,
+                    onStartUpdate = onStartUpdate,
                     onOpenRelease = onOpenRelease,
                     onClose = onClose,
                     onDismissFinished = onDismissFinished,

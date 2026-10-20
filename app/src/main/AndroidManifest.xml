@@ -10,6 +10,10 @@
     <uses-permission android:name="androidx.car.app.MAP_TEMPLATES" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Self-update from GitHub releases (update/SelfUpdater.kt). The second lets Android install
+         the app's own updates without a prompt once the user allowed the first. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <!-- supportsRtl is off because the app's UI is only in English: mirroring English screens on
          a Hebrew or Arabic phone mixes directions. Turn it back on with the first RTL translation.
@@ -96,6 +100,18 @@
             android:exported="false"
             android:label="@string/settings_title"
             android:theme="@style/Theme.AABrowser" />
+
+        <receiver
+            android:name=".update.UpdateInstallReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".update.AppUpdatedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name="com.google.android.gms.oss.licenses.OssLicensesMenuActivity"
