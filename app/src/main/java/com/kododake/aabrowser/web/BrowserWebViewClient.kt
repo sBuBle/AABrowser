@@ -113,13 +113,15 @@ class BrowserWebViewClient(
         return true
     }
 
+    /**
+     * Lets web content navigate only to web schemes. Like Chrome, pages may not open local files or
+     * top-level `data:` URLs (a common phishing trick); the app itself loads those with loadUrl,
+     * which never passes through here.
+     */
     private fun handleUri(uri: Uri?): Boolean {
         if (uri == null) return false
-        val scheme = uri.scheme?.lowercase()
-        if (scheme == null || scheme in setOf("http", "https", "about", "file", "data", "javascript")) {
-            return false
-        }
-        return true
+        val scheme = uri.scheme?.lowercase() ?: return false
+        return scheme !in PAGE_NAVIGABLE_SCHEMES
     }
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
@@ -166,13 +168,9 @@ class BrowserWebViewClient(
         val uri = Uri.parse(stringUrl)
         val scheme = uri.scheme?.lowercase()
 
-        if (scheme == "http") {
-            val allowedOnce = view.getTag(R.id.webview_allow_once_uri_tag) as? String
-            if (allowedOnce == stringUrl) {
-                view.setTag(R.id.webview_allow_once_uri_tag, null)
-            } else if (CleartextNavigationHandler.handleCleartextIfNeeded(view, uri, callbacks, onPageStart = true)) {
-                return
-            }
+        CleartextNavigationHandler.onMainFramePageStarted(view, uri)
+        if (scheme == "http" && CleartextNavigationHandler.handleCleartextIfNeeded(view, uri, callbacks, onPageStart = true)) {
+            return
         }
     }
 
@@ -213,9 +211,8 @@ class BrowserWebViewClient(
             if (shouldShowErrorPage) {
                 val failed = request.url?.toString().orEmpty()
                 val message = error.description?.toString().orEmpty()
-                val assetUrl = "file:///android_asset/error.html?failedUrl=${Uri.encode(failed)}&code=$code&message=${Uri.encode(message)}"
                 try {
-                    view.loadUrl(assetUrl)
+                    view.loadUrl(ErrorPage.urlFor(failed, code, message))
                 } catch (_: Exception) {
                     callbacks.onError(code, error.description?.toString())
                 }
@@ -226,22 +223,9 @@ class BrowserWebViewClient(
         // Sub-resource errors (blocked ads among them) are the page's business, not the user's.
     }
 
-    override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
-        if (request.isForMainFrame) {
-            val code = errorResponse.statusCode
-            if (code in 400..599 && code != 429) {
-                val failed = request.url?.toString().orEmpty()
-                val message = errorResponse.reasonPhrase.orEmpty()
-                val assetUrl = "file:///android_asset/error.html?failedUrl=${Uri.encode(failed)}&code=$code&message=${Uri.encode(message)}"
-                try {
-                    view.loadUrl(assetUrl)
-                } catch (_: Exception) {
-                    callbacks.onError(code, message)
-                }
-                return
-            }
-        }
-    }
+    // HTTP error statuses (404, 500, ...) are deliberately not replaced with the error page: like
+    // any browser, show the page the server sent. It explains the problem better, and bot checks
+    // such as Cloudflare's are served as 403 pages that must stay usable.
 
     override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
         val activity = view.context as? Activity
@@ -272,3 +256,5 @@ class BrowserWebViewClient(
 
 /** How long after a page starts loading it may still redirect on its own (shorteners, sign-in hops). */
 private const val REDIRECT_CHAIN_WINDOW_MS = 3_000L
+
+private val PAGE_NAVIGABLE_SCHEMES = setOf("http", "https", "about", "javascript")

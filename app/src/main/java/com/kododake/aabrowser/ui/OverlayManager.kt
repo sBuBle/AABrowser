@@ -37,8 +37,8 @@ import com.kododake.aabrowser.settings.SettingsViews
 import com.kododake.aabrowser.startpage.StartPageManager
 import com.kododake.aabrowser.tabs.TabManager
 import com.kododake.aabrowser.ui.compose.screens.share.QrViews
-import com.kododake.aabrowser.ui.compose.screens.version.VersionFetcher
 import com.kododake.aabrowser.ui.compose.screens.version.VersionViews
+import com.kododake.aabrowser.update.SelfUpdater
 import kotlinx.coroutines.launch
 
 class OverlayManager(
@@ -117,6 +117,7 @@ class OverlayManager(
             installedVersion = "v${BuildConfig.VERSION_NAME}",
             releaseUrlState = releaseUrlState,
             animateEnterProvider = { true },
+            onStartUpdate = { SelfUpdater.startUpdate(activity) },
             onOpenRelease = { url ->
                 uiManager.openUriExternally(Uri.parse(url))
             },
@@ -274,17 +275,13 @@ class OverlayManager(
     }
 
     private fun fetchLatestVersion() {
-        VersionFetcher.fetchLatestVersion(
-            activity = activity,
-            onSuccess = { latestUrl, tag ->
-                isCheckingState.value = false
-                latestVersionState.value = tag
-                releaseUrlState.value = latestUrl
-                callbacks.onVersionInfoReceived(latestUrl, tag)
-            },
-            onError = {
-                isCheckingState.value = false
+        SelfUpdater.check(activity) { release ->
+            isCheckingState.value = false
+            if (release != null) {
+                latestVersionState.value = release.tagName
+                releaseUrlState.value = release.pageUrl
+                callbacks.onVersionInfoReceived(release.pageUrl, release.tagName)
             }
-        )
+        }
     }
 }

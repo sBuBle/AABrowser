@@ -25,6 +25,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kododake.aabrowser.AppConstants.FREE_DROID_WARN_SOLUTIONS_URL
 import com.kododake.aabrowser.AppConstants.FREE_DROID_WARN_VERSION_KEY
 import com.kododake.aabrowser.AppConstants.KEEP_ANDROID_OPEN_URL
+import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.screens.dialogs.DialogViews
 import org.woheller69.freeDroidWarn.R as FreeDroidWarnR
 
@@ -44,10 +45,10 @@ object FreeDroidWarnHelper {
         var dialog: AlertDialog? = null
         val view = DialogViews.createConfirmationDialogView(
             context = activity,
-            title = activity.getString(android.R.string.dialog_alert_title),
+            title = activity.getString(R.string.dialog_attention),
             message = activity.getString(FreeDroidWarnR.string.dialog_Warning),
             isDestructive = false,
-            confirmButtonText = activity.getString(android.R.string.ok),
+            confirmButtonText = activity.getString(R.string.dialog_ok),
             onConfirm = {
                 try { dialog?.dismiss() } catch (_: Exception) {}
                 pref.edit().putInt(FREE_DROID_WARN_VERSION_KEY, vCode).apply()

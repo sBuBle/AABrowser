@@ -378,7 +378,7 @@ fun PrivacyAndAboutComposable(
             title = stringResource(R.string.settings_clear_site_permissions_title),
             message = stringResource(R.string.settings_clear_site_permissions_message),
             isDestructive = true,
-            confirmButtonText = stringResource(android.R.string.ok),
+            confirmButtonText = stringResource(R.string.dialog_ok),
             onConfirm = {
                 BrowserPreferences.clearSavedSitePermissions(context)
                 GeolocationPermissions.getInstance().clearAll()
@@ -424,7 +424,7 @@ fun PrivacyAndAboutComposable(
             title = stringResource(R.string.settings_clear_cookies_title),
             message = stringResource(R.string.settings_clear_cookies_message),
             isDestructive = true,
-            confirmButtonText = stringResource(android.R.string.ok),
+            confirmButtonText = stringResource(R.string.dialog_ok),
             onConfirm = {
                 WebStorage.getInstance().deleteAllData()
                 CookieManager.getInstance().removeAllCookies(null)

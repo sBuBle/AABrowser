@@ -33,28 +33,21 @@ object CleartextNavigationHandler {
         val scheme = uri.scheme?.lowercase() ?: return false
         if (scheme != "http") return false
 
-        val allowedOnce = view.getTag(R.id.webview_allow_once_uri_tag) as? String
-        if (allowedOnce == uri.toString()) {
-            view.setTag(R.id.webview_allow_once_uri_tag, null)
-            return false
-        }
-
         val host = uri.host?.lowercase()
+        if (host != null && host == view.getTag(R.id.webview_allow_once_host_tag)) return false
         if (BrowserPreferences.isHostAllowedCleartext(view.context, host)) {
             return false
         }
         if (onPageStart) view.stopLoading()
         val allowOnce = {
-            view.setTag(R.id.webview_allow_once_uri_tag, uri.toString())
+            allowOnce(view, uri)
             view.post { view.loadUrl(uri.toString()) }
             Unit
         }
         val allowHost = {
             view.context?.let { ctx ->
-                val hostToStore = uri.host?.lowercase()
-                if (hostToStore != null) BrowserPreferences.addAllowedCleartextHost(ctx, hostToStore)
+                if (host != null) BrowserPreferences.addAllowedCleartextHost(ctx, host)
             }
-            view.setTag(R.id.webview_allow_once_uri_tag, uri.toString())
             view.post { view.loadUrl(uri.toString()) }
             Unit
         }
@@ -64,5 +57,20 @@ object CleartextNavigationHandler {
         }
         callbacks.onCleartextNavigationRequested(uri, allowOnce, allowHost, cancel)
         return true
+    }
+
+    /**
+     * Lets this tab use plain HTTP on [uri]'s site until it moves on to another site. Keyed by host,
+     * not the exact address: WebView normalizes what it loads (`http://a.com` becomes
+     * `http://a.com/`) and pages link around within the site, neither of which should ask again.
+     */
+    fun allowOnce(view: WebView, uri: Uri) {
+        view.setTag(R.id.webview_allow_once_host_tag, uri.host?.lowercase())
+    }
+
+    /** Forgets an "Allow once" when the tab starts loading a page on a different site. */
+    fun onMainFramePageStarted(view: WebView, uri: Uri) {
+        val allowedHost = view.getTag(R.id.webview_allow_once_host_tag) as? String ?: return
+        if (uri.host?.lowercase() != allowedHost) view.setTag(R.id.webview_allow_once_host_tag, null)
     }
 }

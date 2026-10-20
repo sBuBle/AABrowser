@@ -42,6 +42,7 @@ import com.kododake.aabrowser.ui.compose.components.BrowserLayout
 import com.kododake.aabrowser.ui.compose.screens.toolbar.ToolbarActions
 import com.kododake.aabrowser.ui.controllers.FullscreenController
 import com.kododake.aabrowser.ui.controllers.MenuDragGestureHelper
+import com.kododake.aabrowser.web.ErrorPage
 import com.kododake.aabrowser.web.adsBlockedCount
 
 class BrowserUIManager(
@@ -282,7 +283,7 @@ class BrowserUIManager(
 
     fun sanitizeJsExternalUrl(sourceWebView: android.webkit.WebView, rawUrl: String?): Uri? {
         val currentPage = sourceWebView.url ?: return null
-        if (!currentPage.startsWith("file:///android_asset/error.html")) return null
+        if (!ErrorPage.isErrorPage(currentPage)) return null
         val candidate = rawUrl?.trim().takeUnless { it.isNullOrBlank() } ?: return null
         val parsed = runCatching { Uri.parse(candidate) }.getOrNull() ?: return null
         val scheme = parsed.scheme?.lowercase() ?: return null

@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.theme.ExpressiveTypography
 
 /** Lists the sites with an exception (ads or pop-ups allowed), each with a button to remove it. */
@@ -154,7 +155,7 @@ fun AllowedSitesDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text(stringResource(android.R.string.ok))
+                        Text(stringResource(R.string.dialog_ok))
                     }
                 }
             }

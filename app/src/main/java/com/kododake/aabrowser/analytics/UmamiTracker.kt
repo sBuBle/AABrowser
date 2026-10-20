@@ -22,6 +22,7 @@ import android.util.Log
 import androidx.core.content.pm.PackageInfoCompat
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -36,7 +37,6 @@ import okhttp3.Response
 
 class UmamiTracker(context: Context) {
     private val appContext = context.applicationContext
-    private val client = OkHttpClient()
     private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { encodeDefaults = false }
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
@@ -79,7 +79,7 @@ class UmamiTracker(context: Context) {
             .addHeader("User-Agent", "$USER_AGENT/$appVersion")
             .build()
 
-        client.newCall(request).enqueue(object : Callback {
+        sharedClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.w(TAG, "Failed: ${e.message}")
             }
@@ -99,5 +99,10 @@ class UmamiTracker(context: Context) {
         private const val WEBSITE_ID = "0429c890-e9a6-4370-8434-a05aaa54249d"
         private const val UMAMI_ENDPOINT = "https://stats1.kododake.work/api/send"
         private const val USER_AGENT = "Mozilla/5.0 (Android) AABrowser"
+
+        /** One client for every tracker instance, so they share a connection pool and threads. */
+        private val sharedClient = OkHttpClient.Builder()
+            .callTimeout(15, TimeUnit.SECONDS)
+            .build()
     }
 }

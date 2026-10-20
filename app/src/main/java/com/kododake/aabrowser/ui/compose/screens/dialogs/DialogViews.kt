@@ -22,6 +22,7 @@ import android.graphics.Bitmap
 import android.view.View
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.theme.AABrowserTheme
 
 object DialogViews {
@@ -104,7 +105,7 @@ object DialogViews {
         onConfirm: (() -> Unit)? = null,
         secondaryButtonText: String? = null,
         onSecondary: (() -> Unit)? = null,
-        dismissButtonText: String = context.getString(android.R.string.cancel),
+        dismissButtonText: String = context.getString(R.string.dialog_cancel),
         onDismiss: () -> Unit
     ): View {
         return ComposeView(context).apply {

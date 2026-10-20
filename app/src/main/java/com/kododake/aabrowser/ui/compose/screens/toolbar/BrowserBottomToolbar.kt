@@ -61,6 +61,7 @@ import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
 import com.kododake.aabrowser.ui.compose.screens.menu.MenuStateHolder
 import com.kododake.aabrowser.ui.compose.theme.AABrowserTheme
+import com.kododake.aabrowser.web.ConnectionSecurity
 
 /** Action callbacks for [BrowserBottomToolbar]. */
 data class ToolbarActions(
@@ -151,8 +152,9 @@ private fun ToolbarIconButton(
 @Composable
 private fun AddressPill(url: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(22.dp)
-    val isSecure = url.startsWith("https://", ignoreCase = true)
-    val isInsecure = url.startsWith("http://", ignoreCase = true)
+    val security = ConnectionSecurity.of(url)
+    val isSecure = security == ConnectionSecurity.SECURE
+    val isInsecure = security == ConnectionSecurity.INSECURE
     val label = displayAddress(url).ifEmpty { stringResource(R.string.menu_address_label) }
     val isDark = isSystemInDarkTheme()
 

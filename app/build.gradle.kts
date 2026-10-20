@@ -10,6 +10,9 @@ plugins {
     id("com.google.android.gms.oss-licenses-plugin")
 }
 
+val updateReleaseApi: String? = providers.gradleProperty("updateReleaseApi").orNull
+val DEFAULT_UPDATE_RELEASE_API = "https://api.github.com/repos/sBuBle/AABrowser/releases/latest"
+
 android {
     namespace = "com.kododake.aabrowser"
     compileSdk = 37
@@ -22,6 +25,10 @@ android {
         versionName = "3.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Where the self-updater looks for new versions: GitHub's "latest release" API. Test builds
+        // can point it elsewhere with -PupdateReleaseApi=<url>.
+        buildConfigField("String", "UPDATE_RELEASE_API", "\"${updateReleaseApi ?: DEFAULT_UPDATE_RELEASE_API}\"")
     }
 
     signingConfigs {
@@ -46,13 +53,22 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Installs next to the signed release instead of clashing with its signature.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            // Release updates are signed with the release key and cannot install over a debug build.
+            buildConfigField("boolean", "SELF_UPDATE", "${updateReleaseApi != null}")
+        }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
         }
     }
 
@@ -86,6 +102,21 @@ android {
                 appName.set(appNameStr)
                 versionNameProp.set(vNameStr)
                 debugSuffixProp.set(debugSuffixStr)
+            }
+
+            // Release step: ./gradlew assembleRelease makeReleaseUpdatePatch -PpreviousApk=<last release APK>
+            tasks.register<MakeUpdatePatchTask>("make${variant.name.replaceFirstChar { it.uppercase() }}UpdatePatch") {
+                group = "distribution"
+                description = "Writes update.json and patches from -PpreviousApk=<earlier APK>[,<more>]."
+                previousApks.from(
+                    providers.gradleProperty("previousApk")
+                        .map { paths -> paths.split(',').map(String::trim).filter(String::isNotEmpty) }
+                        .orElse(emptyList())
+                )
+                newApk.set(renameTaskProvider.flatMap { it.outputDir.file("$appNameStr-$vNameStr$debugSuffixStr.apk") })
+                versionCode.set(android.defaultConfig.versionCode ?: 0)
+                versionName.set(vNameStr)
+                outputDir.set(layout.buildDirectory.dir("updatePatch/${variant.name}"))
             }
 
             afterEvaluate {
@@ -130,7 +161,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.google.oss.licenses)
-    implementation("com.github.woheller69:FreeDroidWarn:V1.+")
+    implementation(libs.freedroidwarn)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

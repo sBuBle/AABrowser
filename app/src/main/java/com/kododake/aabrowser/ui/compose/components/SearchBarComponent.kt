@@ -64,10 +64,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kododake.aabrowser.R
+import com.kododake.aabrowser.web.ConnectionSecurity
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -78,14 +82,19 @@ fun SearchBarComponent(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null
 ) {
-    var queryText by remember { mutableStateOf(initialQuery) }
+    var queryValue by remember { mutableStateOf(TextFieldValue(initialQuery)) }
+    // Like other browsers, focusing the field selects the whole address so typing replaces it; the
+    // first tap after that would otherwise drop the selection again, so it keeps it.
+    var keepSelectAllOnNextTap by remember { mutableStateOf(false) }
+    val queryText = queryValue.text
 
     LaunchedEffect(initialQuery) {
-        queryText = initialQuery
+        queryValue = TextFieldValue(initialQuery)
     }
 
-    val isSecure = queryText.startsWith("https://", ignoreCase = true)
-    val isInsecure = queryText.startsWith("http://", ignoreCase = true)
+    val security = ConnectionSecurity.of(queryText)
+    val isSecure = security == ConnectionSecurity.SECURE
+    val isInsecure = security == ConnectionSecurity.INSECURE
 
     val isDark = isSystemInDarkTheme()
     val containerColor = if (isDark) {
@@ -140,8 +149,16 @@ fun SearchBarComponent(
             Spacer(Modifier.width(12.dp))
 
             BasicTextField(
-                value = queryText,
-                onValueChange = { queryText = it },
+                value = queryValue,
+                onValueChange = { newValue ->
+                    val isCursorMoveOnly = newValue.text == queryValue.text && newValue.selection.collapsed
+                    queryValue = if (keepSelectAllOnNextTap && isCursorMoveOnly) {
+                        newValue.copy(selection = TextRange(0, newValue.text.length))
+                    } else {
+                        newValue
+                    }
+                    keepSelectAllOnNextTap = false
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -169,6 +186,12 @@ fun SearchBarComponent(
                 modifier = Modifier
                     .weight(1f)
                     .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                    .onFocusChanged { focus ->
+                        keepSelectAllOnNextTap = focus.isFocused
+                        if (focus.isFocused) {
+                            queryValue = queryValue.copy(selection = TextRange(0, queryValue.text.length))
+                        }
+                    }
             )
 
             AnimatedVisibility(
@@ -179,10 +202,10 @@ fun SearchBarComponent(
                         scaleOut(animationSpec = MaterialTheme.motionScheme.fastSpatialSpec())
             ) {
                 IconButton(
-                    onClick = { queryText = "" },
+                    onClick = { queryValue = TextFieldValue("") },
                     modifier = Modifier
                         .size(36.dp)
-                        .bouncyClickable { queryText = "" }
+                        .bouncyClickable { queryValue = TextFieldValue("") }
                 ) {
                     Icon(
                         Icons.Rounded.Clear,

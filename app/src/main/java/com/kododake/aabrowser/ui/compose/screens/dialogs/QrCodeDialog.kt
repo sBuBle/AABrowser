@@ -147,7 +147,7 @@ fun QrCodeDialog(
                 onClick = onDismiss,
                 modifier = Modifier.bouncyClickable(onClick = onDismiss)
             ) {
-                Text(stringResource(android.R.string.cancel))
+                Text(stringResource(R.string.dialog_cancel))
             }
         }
     )

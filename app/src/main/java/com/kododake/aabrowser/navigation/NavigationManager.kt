@@ -23,7 +23,7 @@ import android.net.Uri
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import com.kododake.aabrowser.R
+import com.kododake.aabrowser.web.CleartextNavigationHandler
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.permissions.PermissionManager
@@ -139,7 +139,7 @@ class NavigationManager(
                 uri = uri,
                 onAllowOnce = {
                     finishNavigation {
-                        targetWebView.setTag(R.id.webview_allow_once_uri_tag, navigable)
+                        CleartextNavigationHandler.allowOnce(targetWebView, uri)
                         targetWebView.post { 
                             targetWebView.loadUrl(navigable) 
                         }
@@ -150,7 +150,7 @@ class NavigationManager(
                         BrowserPreferences.addAllowedCleartextHost(activity, host)
                     }
                     finishNavigation {
-                        targetWebView.setTag(R.id.webview_allow_once_uri_tag, navigable)
+                        CleartextNavigationHandler.allowOnce(targetWebView, uri)
                         targetWebView.post { 
                             targetWebView.loadUrl(navigable) 
                         }

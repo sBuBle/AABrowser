@@ -19,20 +19,13 @@ package com.kododake.aabrowser.web
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.net.Uri
-import android.net.http.SslError
-import android.os.Build
 import android.os.Message
 import android.os.SystemClock
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
 import android.webkit.PermissionRequest
-import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -43,6 +36,7 @@ import androidx.webkit.NavigationListener
 import androidx.webkit.ScriptHandler
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.kododake.aabrowser.BuildConfig
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.model.UserAgentProfile
 
@@ -75,7 +69,7 @@ fun configureWebView(
         isHorizontalScrollBarEnabled = false
         isVerticalScrollBarEnabled = true
 
-        WebView.setWebContentsDebuggingEnabled(false)
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
         val originalUserAgent = settings.userAgentString
         setTag(R.id.webview_original_user_agent_tag, originalUserAgent)
@@ -92,13 +86,13 @@ fun configureWebView(
             builtInZoomControls = true
             displayZoomControls = false
             cacheMode = WebSettings.LOAD_DEFAULT
-            allowContentAccess = true
+            // Web pages have no business reading other apps' content:// providers or local files.
+            allowContentAccess = false
             allowFileAccess = false
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                safeBrowsingEnabled = true
-            }
+            // Like Chrome: insecure scripts, frames and XHR on an HTTPS page are blocked, while
+            // insecure images and media still load (upgraded to HTTPS where possible).
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            safeBrowsingEnabled = true
             // Raster tiles ahead of scrolling only for the visible tab (see setForegroundTab):
             // enabling it on every tab multiplies GPU memory use and starves video playback.
             offscreenPreRaster = false

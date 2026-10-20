@@ -57,7 +57,7 @@ object StartPageSlotPickerDialog {
             .setSingleChoiceItems(slotLabels, selectedSlot) { _, which ->
                 selectedSlot = which
             }
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNegativeButton(R.string.dialog_cancel, null)
             .setPositiveButton(R.string.start_page_slot_picker_save) { _, _ ->
                 BrowserPreferences.addBookmark(activity, normalizedUrl)
                 BrowserPreferences.setStartPageSlot(activity, selectedSlot, normalizedUrl)

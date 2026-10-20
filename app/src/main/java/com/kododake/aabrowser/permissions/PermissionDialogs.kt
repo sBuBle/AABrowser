@@ -87,7 +87,7 @@ class PermissionDialogs(private val activity: AppCompatActivity) {
                 try { dialog?.dismiss() } catch (_: Exception) {}
                 onKeepApproximate()
             },
-            dismissButtonText = activity.getString(android.R.string.cancel),
+            dismissButtonText = activity.getString(R.string.dialog_cancel),
             onDismiss = {
                 try { dialog?.dismiss() } catch (_: Exception) {}
                 onCancel()
@@ -217,7 +217,7 @@ class PermissionDialogs(private val activity: AppCompatActivity) {
                 try { dialog?.dismiss() } catch (_: Exception) {}
                 onAllowOnce()
             },
-            dismissButtonText = activity.getString(android.R.string.cancel),
+            dismissButtonText = activity.getString(R.string.dialog_cancel),
             onDismiss = {
                 try { dialog?.dismiss() } catch (_: Exception) {}
                 onCancel()

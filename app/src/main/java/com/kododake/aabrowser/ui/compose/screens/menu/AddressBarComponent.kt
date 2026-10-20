@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
+import com.kododake.aabrowser.web.ConnectionSecurity
 
 @Composable
 fun AddressBarComponent(
@@ -59,8 +60,9 @@ fun AddressBarComponent(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isSecure = url.startsWith("https://", ignoreCase = true)
-    val isInsecure = url.startsWith("http://", ignoreCase = true)
+    val security = ConnectionSecurity.of(url)
+    val isSecure = security == ConnectionSecurity.SECURE
+    val isInsecure = security == ConnectionSecurity.INSECURE
 
     Surface(
         shape = RoundedCornerShape(28.dp),

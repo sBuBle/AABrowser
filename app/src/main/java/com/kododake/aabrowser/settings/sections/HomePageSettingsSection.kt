@@ -75,13 +75,13 @@ object HomePageSettingsSection {
             MaterialAlertDialogBuilder(context, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
                 .setTitle("Set Home Page")
                 .setView(inputLayout)
-                .setNegativeButton(android.R.string.cancel, null)
+                .setNegativeButton(R.string.dialog_cancel, null)
                 .setNeutralButton("Clear") { _, _ ->
                     BrowserPreferences.clearHomePageUrl(context)
                     callbacks.onHomePageChanged()
                     Toast.makeText(context, R.string.home_page_cleared, Toast.LENGTH_SHORT).show()
                 }
-                .setPositiveButton(android.R.string.ok) { _, _ ->
+                .setPositiveButton(R.string.dialog_ok) { _, _ ->
                     val entered = input.text?.toString()?.trim().orEmpty()
                     if (entered.isNotBlank()) {
                         BrowserPreferences.setHomePageUrl(context, entered)

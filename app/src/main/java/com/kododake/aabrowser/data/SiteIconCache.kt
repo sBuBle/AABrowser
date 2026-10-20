@@ -29,11 +29,15 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Collections
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
 object SiteIconCache {
     private const val ICON_DIR = "site-icons-v2"
+    private const val FETCH_THREADS = 4
+    private const val MAX_ICON_BYTES = 512 * 1024
+    private const val MAX_ICON_DIMENSION = 256
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(6, TimeUnit.SECONDS)
@@ -44,7 +48,8 @@ object SiteIconCache {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val inFlightCallbacks = Collections.synchronizedMap(mutableMapOf<String, MutableList<(Bitmap?) -> Unit>>())
-    private val diskExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val diskExecutor = Executors.newSingleThreadExecutor()
+    private val fetchExecutor = Executors.newFixedThreadPool(FETCH_THREADS)
 
     private val memoryCache: LruCache<String, Bitmap> by lazy {
         val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
@@ -119,7 +124,7 @@ object SiteIconCache {
 
         if (!isFirstRequest) return
 
-        Thread {
+        fetchExecutor.execute {
             val host = extractHost(pageUrl)
             val bitmap = host?.let { fetchIconForHost(it) }
 
@@ -138,7 +143,7 @@ object SiteIconCache {
                     }
                 }
             }
-        }.start()
+        }
     }
 
     private fun fetchIconForHost(host: String): Bitmap? {
@@ -157,9 +162,9 @@ object SiteIconCache {
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@use null
                     val body = response.body
-                    body.byteStream().use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
+                    if (body.contentLength() > MAX_ICON_BYTES) return@use null
+                    // Icons come from arbitrary servers: cap both the download and the decoded size.
+                    body.byteStream().use { stream -> decodeIcon(stream.readNBytes(MAX_ICON_BYTES + 1)) }
                 }
             }.getOrNull()
             if (bmp != null && bmp.width > 1 && bmp.height > 1) {
@@ -167,6 +172,19 @@ object SiteIconCache {
             }
         }
         return null
+    }
+
+    private fun decodeIcon(bytes: ByteArray): Bitmap? {
+        if (bytes.size > MAX_ICON_BYTES) return null
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sampleSize = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sampleSize * 2) >= MAX_ICON_DIMENSION) {
+            sampleSize *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     private fun iconFile(context: Context, url: String?): File? {
