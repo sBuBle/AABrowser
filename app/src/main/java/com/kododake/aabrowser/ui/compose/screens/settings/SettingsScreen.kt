@@ -21,7 +21,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +52,7 @@ import com.kododake.aabrowser.settings.SettingsCallbacks
 import com.kododake.aabrowser.ui.compose.components.ExpressiveDragHandle
 import com.kododake.aabrowser.ui.compose.components.ExpressiveSheetHeader
 import com.kododake.aabrowser.ui.compose.components.bouncyClickable
+import com.kododake.aabrowser.ui.compose.components.rememberBrowserLayout
 import com.kododake.aabrowser.ui.compose.screens.settings.sections.AppearanceSettingsComposable
 import com.kododake.aabrowser.ui.compose.screens.settings.sections.DisplayScaleSettingsComposable
 import com.kododake.aabrowser.ui.compose.screens.settings.sections.InAppControlsComposable
@@ -160,49 +163,66 @@ fun SettingsScreen(
                 key(sessionKey) {
                     Spacer(Modifier.height(20.dp))
 
-                    AppearanceSettingsComposable(
-                        context = context,
-                        onThemeChanged = callbacks.onThemeChanged
-                    )
+                    @Composable
+                    fun GeneralSettings() {
+                        AppearanceSettingsComposable(
+                            context = context,
+                            onThemeChanged = callbacks.onThemeChanged
+                        )
 
-                    Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                    DisplayScaleSettingsComposable(
-                        context = context,
-                        onScaleChanged = callbacks.onScaleChanged
-                    )
+                        DisplayScaleSettingsComposable(
+                            context = context,
+                            onScaleChanged = callbacks.onScaleChanged
+                        )
 
-                    Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                    NavigationSettingsComposable(
-                        context = context,
-                        onHomePageChanged = callbacks.onHomePageChanged
-                    )
+                        NavigationSettingsComposable(
+                            context = context,
+                            onHomePageChanged = callbacks.onHomePageChanged
+                        )
 
-                    Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                    InAppControlsComposable(
-                        context = context,
-                        onInAppControlsChanged = callbacks.onInAppControlsChanged
-                    )
+                        InAppControlsComposable(
+                            context = context,
+                            onInAppControlsChanged = callbacks.onInAppControlsChanged
+                        )
 
-                    Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                    StartPageSettingsComposable(
-                        context = context,
-                        onPickStartPageBackground = callbacks.onPickStartPageBackground,
-                        onClearStartPageBackground = callbacks.onClearStartPageBackground,
-                        onAAAnythingBannerVisibilityChanged = callbacks.onAAAnythingBannerVisibilityChanged
-                    )
+                        StartPageSettingsComposable(
+                            context = context,
+                            onPickStartPageBackground = callbacks.onPickStartPageBackground,
+                            onClearStartPageBackground = callbacks.onClearStartPageBackground,
+                            onAAAnythingBannerVisibilityChanged = callbacks.onAAAnythingBannerVisibilityChanged
+                        )
+                    }
 
-                    Spacer(Modifier.height(24.dp))
+                    @Composable
+                    fun PrivacySettings() {
+                        PrivacyAndAboutComposable(
+                            context = context,
+                            onDrmL3EnforcerChanged = callbacks.onDrmL3EnforcerChanged,
+                            onAdBlockerChanged = callbacks.onAdBlockerChanged,
+                            onUserAgentChanged = callbacks.onUserAgentChanged
+                        )
+                    }
 
-                    PrivacyAndAboutComposable(
-                        context = context,
-                        onDrmL3EnforcerChanged = callbacks.onDrmL3EnforcerChanged,
-                        onAdBlockerChanged = callbacks.onAdBlockerChanged,
-                        onUserAgentChanged = callbacks.onUserAgentChanged
-                    )
+                    if (rememberBrowserLayout().screenWidth >= TWO_COLUMN_MIN_WIDTH) {
+                        // Car displays, phones in landscape and tablets: two columns, so a short
+                        // screen shows twice as much and rows don't stretch across the screen.
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Column(modifier = Modifier.weight(1f)) { GeneralSettings() }
+                            Column(modifier = Modifier.weight(1f)) { PrivacySettings() }
+                        }
+                    } else {
+                        GeneralSettings()
+                        Spacer(Modifier.height(24.dp))
+                        PrivacySettings()
+                    }
 
                     Spacer(Modifier.height(32.dp))
                 }
@@ -216,3 +236,5 @@ fun SettingsScreen(
         ScreenBody()
     }
 }
+
+private val TWO_COLUMN_MIN_WIDTH = 700.dp

@@ -81,6 +81,14 @@ fun MenuFooter(
                 )
             }
 
+            MenuUpdateButtons(onCheckUpdate = onCheckUpdate, onGitHub = onGitHub)
+        }
+    }
+}
+
+/** "Check for Updates" and the GitHub link, shown in the footer or, on short screens, the header. */
+@Composable
+fun MenuUpdateButtons(onCheckUpdate: () -> Unit, onGitHub: () -> Unit) {
             val checkUpdateInteraction = remember { MutableInteractionSource() }
             FilledTonalButton(
                 onClick = onCheckUpdate,
@@ -136,6 +144,4 @@ fun MenuFooter(
                     modifier = Modifier.size(22.dp)
                 )
             }
-        }
-    }
 }

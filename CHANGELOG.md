@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- On car displays and phones in landscape, the browser menu fits on one screen: back, forward and reload sit in a slim header with Check for Updates, the shortcuts are compact, and the address bar uses the whole column.
+- Settings use two columns on wide screens (car displays, landscape, tablets).
+- Phones in landscape use the floating menu button like the car screen, instead of a bottom toolbar taking a sixth of the page.
+- Deleting a bookmark can be undone.
+- Settings: clearer names and descriptions, display scale presets no longer break onto two lines with large fonts, and dates follow the app's language.
 - Fixed the back gesture (and back key) doing nothing after opening a page from the address bar or closing a sheet by swiping, and leaving the app instead of going back after the app had been in the background.
 - The ad blocker now blocks YouTube video ads: it removes the ads from YouTube's player data, like uBlock Origin, and skips any ad that still starts. Sites where you allowed ads no longer get the built-in ad hiding either.
 - Added in-app updates from GitHub releases: "Check for Updates" now offers "Update now", which downloads only the changes since the installed version (about 1 MB instead of about 10 MB), rebuilds and checks the new version on the phone and installs it. After you allow AABrowser to install apps once, later updates install without a prompt. Releases without update files still link to the release page.

@@ -77,6 +77,7 @@ import com.kododake.aabrowser.web.SslErrorHandlerHelper
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun PrivacyAndAboutComposable(
@@ -268,7 +269,7 @@ fun PrivacyAndAboutComposable(
 
         ExpressiveListItem(
             headline = stringResource(R.string.settings_clear_site_permissions),
-            supportingText = stringResource(R.string.settings_clear_site_permissions_title),
+            supportingText = stringResource(R.string.settings_clear_site_permissions_description),
             leadingIcon = Icons.Rounded.LockReset,
             position = ListGroupPosition.Middle,
             onClick = { showClearPermissionsDialog = true }
@@ -295,7 +296,7 @@ fun PrivacyAndAboutComposable(
 
         ExpressiveListItem(
             headline = stringResource(R.string.open_source_view_licenses),
-            supportingText = stringResource(R.string.open_source_licenses_title),
+            supportingText = stringResource(R.string.open_source_licenses_description),
             leadingIcon = Icons.Rounded.Code,
             position = ListGroupPosition.Top,
             onClick = {
@@ -439,9 +440,12 @@ fun PrivacyAndAboutComposable(
 private fun filterListsStatus(context: Context): String {
     val lastUpdated = FilterListManager.lastUpdated(context)
     if (lastUpdated == 0L) return context.getString(R.string.settings_ad_block_lists_never_updated)
+    // Format like the strings around it, not the system language: an English UI on a Hebrew phone
+    // showed "Updated 20 באוק׳ 2026".
+    val locale = Locale.forLanguageTag(context.getString(R.string.ui_language_tag))
     return context.getString(
         R.string.settings_ad_block_lists_status,
-        NumberFormat.getIntegerInstance().format(AdBlocker.ruleCount),
-        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(lastUpdated))
+        NumberFormat.getIntegerInstance(locale).format(AdBlocker.ruleCount),
+        DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(Date(lastUpdated))
     )
 }

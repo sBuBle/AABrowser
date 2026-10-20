@@ -54,6 +54,7 @@
     <string name="share_bookmark_activity_label">Add to bookmarks</string>
     <string name="share_bookmark_activity_description">Save shared links to bookmarks</string>
     <string name="bookmark_removed">Bookmark removed</string>
+    <string name="undo">Undo</string>
     <string name="bookmark_manager_title">Bookmarks</string>
     <string name="bookmark_manager_subtitle">Manage saved pages, your home page, and the start page</string>
     <string name="bookmark_manager_close">Close</string>
@@ -81,6 +82,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Browser Preferences</string>
     <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
     <string name="settings_theme_auto">Auto</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
@@ -93,7 +95,7 @@
     <string name="settings_home_page_hint">Home page URL</string>
     <string name="settings_home_page_helper">Leave empty to keep using the start page.</string>
     <string name="settings_home_page_clear">Clear home page</string>
-    <string name="settings_home_page_inactive">Home page: start page is active</string>
+    <string name="settings_home_page_inactive">Not set: the start page opens</string>
     <string name="settings_startup">Startup</string>
     <string name="settings_restore_tabs_on_launch">Restore tabs on launch</string>
     <string name="settings_restore_tabs_on_launch_description">When no home page is set, reopen the tabs you had open last time and return to the active one.</string>
@@ -108,7 +110,7 @@
     <string name="settings_quick_action_button_mode_menu">Open controls menu</string>
     <string name="settings_quick_action_button_mode_address_bar">Focus URL bar</string>
     <string name="settings_bottom_toolbar">Bottom toolbar on phone</string>
-    <string name="settings_bottom_toolbar_description">Back, forward, address and tabs within thumb reach. The car screen and full screen mode keep the floating button.</string>
+    <string name="settings_bottom_toolbar_description">Back, forward, address and tabs within thumb reach. The car screen, landscape and full screen mode keep the floating button.</string>
     <plurals name="toolbar_open_tabs">
         <item quantity="one">%1$d open tab</item>
         <item quantity="other">%1$d open tabs</item>
@@ -143,11 +145,11 @@
     <string name="settings_user_agent_custom_save">Apply</string>
     <string name="settings_user_agent_custom_empty_fallback">Falls back to Android Chrome if blank.</string>
     <string name="settings_site_data_title">Privacy and site data</string>
-    <string name="settings_site_data_description">Manage saved site permissions, cookies, and local site data stored by the browser.</string>
+    <string name="settings_site_data_description">Signs you out of websites and removes what they stored in the browser.</string>
     <string name="settings_drm_l3_enforcer">DRM Widevine L3 enforcer</string>
-    <string name="settings_drm_l3_enforcer_description">Enforces Widevine L3 compatibility to resolve black screen or playback failures on unsupported hardware.\nEnabled by default.</string>
+    <string name="settings_drm_l3_enforcer_description">Fixes black screens and playback errors on protected video (Widevine L3).</string>
     <string name="settings_ad_blocker">Ad blocker</string>
-    <string name="settings_ad_blocker_description">Blocks ads, trackers, pop-ups and redirects to ad pages for faster page loads and smoother streaming, and skips YouTube video ads.\nEnabled by default.</string>
+    <string name="settings_ad_blocker_description">Blocks ads, trackers and ad redirects, including YouTube video ads, for faster pages and smoother streaming.</string>
     <string name="settings_ad_block_lists">Ad block filter lists</string>
     <string name="settings_ad_block_lists_status">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\n%1$s rules · Updated %2$s · Tap to update</string>
     <string name="settings_ad_block_lists_never_updated">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\nNot downloaded yet · Tap to download</string>
@@ -187,6 +189,7 @@
     <string name="settings_clear_http_hosts">Reset HTTP allowed hosts</string>
     <string name="settings_action_delete">Delete</string>
     <string name="settings_clear_site_permissions_title">Reset saved site permissions</string>
+    <string name="settings_clear_site_permissions_description">Sites ask again for microphone and location, and the client certificates chosen for them are forgotten.</string>
     <string name="settings_clear_site_permissions_message">Saved site permissions will be deleted.\n\n- Microphone access you allowed will ask again\n- Location access you allowed will ask again\n- Client certificates chosen for automatic login will be reset</string>
     <string name="settings_clear_site_permissions_success_title">Saved site permissions removed</string>
     <string name="settings_clear_site_permissions_success_message">Saved permissions for microphone access, location access, and client certificate selections have been deleted.</string>
@@ -215,6 +218,7 @@
     
     <string name="open_source_view_licenses">View open-source licenses</string>
     <string name="open_source_licenses_title">Open-source Licenses</string>
+    <string name="open_source_licenses_description">Libraries this app is built with and their licenses</string>
     
     <string name="kododake_name">kododake (Lead)</string>
     <string name="menu_start_page">Start Page</string>
@@ -273,6 +277,8 @@
     <string name="ssl_error_proceed">Proceed anyway (unsafe)</string>
     <!-- Used instead of android.R.string.*, which follow the system language and would mix
          languages in an app that is not translated into it. -->
+    <!-- Language of these strings as a BCP 47 tag; dates and numbers in them are formatted to match. -->
+    <string name="ui_language_tag">en</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_attention">Attention</string>
