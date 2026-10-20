@@ -5,7 +5,7 @@
     <dimen name="menu_card_elevation">8dp</dimen>
     <dimen name="menu_padding_horizontal">20dp</dimen>
     <dimen name="menu_padding_vertical">24dp</dimen>
-    <dimen name="menu_max_height">600dp</dimen>
+    <dimen name="bottom_toolbar_height">64dp</dimen>
 
     <!-- Content Spacing -->
     <dimen name="menu_section_spacing">20dp</dimen>

@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
@@ -158,6 +159,7 @@ fun ExpressiveBottomSheetContainer(
         }
 
         val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        val maxSheetWidth = rememberBrowserLayout().maxSheetWidth
 
         Box(modifier = modifier.fillMaxSize()) {
             Box(
@@ -179,6 +181,7 @@ fun ExpressiveBottomSheetContainer(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = maxSheetWidth)
                     .fillMaxWidth()
                     .then(sheetModifier)
                     .offset { IntOffset(0, sheetOffsetY.value.roundToInt()) }

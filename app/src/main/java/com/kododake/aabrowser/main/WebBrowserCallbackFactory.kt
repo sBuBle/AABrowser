@@ -21,6 +21,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.google.android.material.snackbar.Snackbar
 import com.kododake.aabrowser.AppConstants.REQUEST_CODE_RECORD_AUDIO
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.data.BrowserPreferences
@@ -28,6 +29,8 @@ import com.kododake.aabrowser.data.SiteIconCache
 import com.kododake.aabrowser.databinding.ActivityMainBinding
 import com.kododake.aabrowser.tabs.BrowserTab
 import com.kododake.aabrowser.web.BrowserCallbacks
+import com.kododake.aabrowser.web.RedirectBlocker
+import com.kododake.aabrowser.web.SiteExceptionList
 
 class WebBrowserCallbackFactory(
     private val activity: AppCompatActivity,
@@ -171,6 +174,23 @@ class WebBrowserCallbackFactory(
                     }
                 }
             },
+            onRedirectBlocked = { pageUrl, targetUrl ->
+                activity.runOnUiThread {
+                    if (tab.id != provider.tabManager.activeTabId) return@runOnUiThread
+                    val target = SiteExceptionList.siteOf(targetUrl) ?: targetUrl
+                    showAllowSnackbar(activity.getString(R.string.redirect_blocked, target), pageUrl) {
+                        tab.webView.loadUrl(targetUrl)
+                    }
+                }
+            },
+            onPopupWindowBlocked = { openerUrl ->
+                activity.runOnUiThread {
+                    if (tab.id != provider.tabManager.activeTabId) return@runOnUiThread
+                    showAllowSnackbar(activity.getString(R.string.popup_window_blocked), openerUrl) {
+                        Toast.makeText(activity, R.string.popup_window_allowed, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             onAdsBlockedChanged = {
                 if (tab.id == provider.tabManager.activeTabId) {
                     provider.uiManager.refreshAdBlockMenuState()
@@ -187,5 +207,19 @@ class WebBrowserCallbackFactory(
                 }
             }
         )
+    }
+
+    /** "Blocked …" with an Allow button that adds the page's site to the pop-up and redirect exceptions. */
+    private fun showAllowSnackbar(message: String, pageUrl: String?, onAllowed: () -> Unit) {
+        val site = SiteExceptionList.siteOf(pageUrl)
+        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+        if (site != null) {
+            snackbar.setAction(R.string.redirect_allow) {
+                RedirectBlocker.allowedSites.set(activity, site, included = true)
+                onAllowed()
+            }
+        }
+        val anchor = if (binding.bottomToolbarComposeView.isVisible) binding.bottomToolbarComposeView else null
+        snackbar.setAnchorView(anchor).show()
     }
 }

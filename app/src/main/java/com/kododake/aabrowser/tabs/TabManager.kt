@@ -60,8 +60,13 @@ class TabManager(
     val activeTab: BrowserTab?
         get() = browserTabs.firstOrNull { it.id == activeTabId }
 
+    /** Version of the shared [TabSessionSync] session these tabs match. */
+    private var syncedVersion = -1L
+    private var isApplyingSharedSession = false
+
     init {
         setupComposeTabs()
+        TabSessionSync.register(this)
     }
 
     private fun setupComposeTabs() {
@@ -83,7 +88,8 @@ class TabManager(
             lastVisitedUrl = lastVisitedUrl,
             restoreTabsOnLaunch = restoreTabsOnLaunch,
             resumeLastPageOnLaunch = resumeLastPageOnLaunch,
-            shouldForceSessionRestore = shouldForceSessionRestore,
+            // Opened on the second screen (phone or car): show the tabs already open on the first.
+            shouldForceSessionRestore = shouldForceSessionRestore || (intentUrl == null && TabSessionSync.hasOtherMembers(this)),
             createTab = { url, title, activate ->
                 createBrowserTab(url, title, activate)
             },
@@ -171,7 +177,54 @@ class TabManager(
     }
 
     fun persistTabSession() {
-        TabStateStore.persistTabSession(activity, browserTabs, activeTabId)
+        if (isApplyingSharedSession || !TabSessionSync.mayPublish(this)) return
+        syncedVersion = TabSessionSync.publish(activity, currentSession())
+    }
+
+    /**
+     * Called when the user turns to this screen: it becomes the one that publishes its tabs, after
+     * first catching up with what was done on the other screen.
+     */
+    fun onScreenInUse() {
+        TabSessionSync.claimUse(this)
+        val shared = TabSessionSync.session ?: return
+        if (syncedVersion == TabSessionSync.version) return
+        if (shared != currentSession() && shared.tabs.isNotEmpty()) {
+            isApplyingSharedSession = true
+            try {
+                applySharedSession(shared)
+            } finally {
+                isApplyingSharedSession = false
+            }
+        }
+        syncedVersion = TabSessionSync.version
+    }
+
+    private fun currentSession(): TabSessionSync.Session = TabSessionSync.Session(
+        tabs = TabStateStore.sessionEntries(browserTabs),
+        activeIndex = browserTabs.indexOfFirst { it.id == activeTabId }.coerceAtLeast(0)
+    )
+
+    /** Opens, closes and navigates tabs (by position) until they match [shared]. */
+    private fun applySharedSession(shared: TabSessionSync.Session) {
+        shared.tabs.forEachIndexed { index, entry ->
+            val existing = browserTabs.getOrNull(index)
+            val url = entry.url
+            when {
+                existing == null -> createBrowserTab(url, entry.title.orEmpty(), activate = false)
+                !url.isNullOrBlank() && existing.currentUrl != url -> {
+                    browserTabs[index] = existing.copy(currentUrl = url, currentTitle = entry.title.orEmpty())
+                    WebViewNavigationHelper.navigate(existing.webView, url, replaceCurrentEntry = false)
+                }
+            }
+        }
+        while (browserTabs.size > shared.tabs.size) {
+            closeTab(browserTabs.last().id) {}
+        }
+        browserTabs.getOrNull(shared.activeIndex)?.let { tab ->
+            if (tab.id != activeTabId) switchToTab(tab.id)
+        }
+        refreshTabs()
     }
 
     fun refreshTabs() {
@@ -280,6 +333,7 @@ class TabManager(
         TabSessionResetter.resetActiveTab(activity, binding, browserTabs, activeTabId, callbacks, newUrl)
 
     fun destroy() {
+        TabSessionSync.unregister(this)
         browserTabs.forEach { tab ->
             tab.speechBridge.destroy()
             tab.webView.releaseCompletely()

@@ -21,6 +21,7 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
+import android.os.SystemClock
 import android.view.ViewGroup
 import android.webkit.ClientCertRequest
 import android.webkit.RenderProcessGoneDetail
@@ -52,9 +53,15 @@ class BrowserWebViewClient(
     @Volatile
     private var mainFrameRequested = false
 
+    /** When the current page started loading, to tell redirect chains from later redirects. */
+    private var pageStartedAt = 0L
+
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val uri = request.url
         if (request.isForMainFrame && blockAdNavigation(view, uri?.toString())) {
+            return true
+        }
+        if (request.isForMainFrame && blockRedirect(view, request)) {
             return true
         }
         if (CleartextNavigationHandler.handleCleartextIfNeeded(view, uri, callbacks, onPageStart = false)) {
@@ -85,6 +92,27 @@ class BrowserWebViewClient(
         return true
     }
 
+    /**
+     * Stops a page from sending the tab to another site unless a link was tapped. Redirects within
+     * the first moments of a page load pass: link shorteners, sign-in and consent hops.
+     */
+    private fun blockRedirect(view: WebView, request: WebResourceRequest): Boolean {
+        val target = request.url?.toString() ?: return false
+        if (request.isRedirect || !BrowserPreferences.isHttpOrHttps(target)) return false
+        if (view.getTag(R.id.webview_popup_opener_url_tag) != null) return false
+        if (request.hasGesture()) {
+            if (RedirectBlocker.isLinkTap(view)) return false
+        } else if (SystemClock.uptimeMillis() - pageStartedAt < REDIRECT_CHAIN_WINDOW_MS) {
+            return false
+        }
+        val from = view.url ?: pageUrl
+        if (!RedirectBlocker.shouldBlockRedirect(from, target)) return false
+        blockedCount.incrementAndGet()
+        publishBlockedCount(view)
+        callbacks.onRedirectBlocked(from, target)
+        return true
+    }
+
     private fun handleUri(uri: Uri?): Boolean {
         if (uri == null) return false
         val scheme = uri.scheme?.lowercase()
@@ -104,7 +132,7 @@ class BrowserWebViewClient(
         if (AdBlocker.shouldBlock(request, pageUrl)) {
             blockedCount.incrementAndGet()
             publishBlockedCount(view)
-            return AdBlocker.blockedResponse()
+            return AdBlocker.blockedResponse(request)
         }
         return super.shouldInterceptRequest(view, request)
     }
@@ -124,6 +152,7 @@ class BrowserWebViewClient(
         super.onPageStarted(view, url, favicon)
         val stringUrl = url ?: return
         pageUrl = stringUrl
+        pageStartedAt = SystemClock.uptimeMillis()
         // Pages restored from the back/forward cache never pass through shouldInterceptRequest.
         if (!mainFrameRequested) {
             blockedCount.set(0)
@@ -192,8 +221,9 @@ class BrowserWebViewClient(
                 }
                 return
             }
+            callbacks.onError(error.errorCode, error.description?.toString())
         }
-        callbacks.onError(error.errorCode, error.description?.toString())
+        // Sub-resource errors (blocked ads among them) are the page's business, not the user's.
     }
 
     override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
@@ -239,3 +269,6 @@ class BrowserWebViewClient(
         return true
     }
 }
+
+/** How long after a page starts loading it may still redirect on its own (shorteners, sign-in hops). */
+private const val REDIRECT_CHAIN_WINDOW_MS = 3_000L

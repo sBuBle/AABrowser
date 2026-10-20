@@ -61,6 +61,14 @@
             android:layout_gravity="top"
             android:elevation="8dp" />
 
+        <!-- Phone bottom toolbar; the page and start page get a matching bottom margin while it shows -->
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/bottomToolbarComposeView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:visibility="gone" />
+
     </FrameLayout>
 
     <FrameLayout

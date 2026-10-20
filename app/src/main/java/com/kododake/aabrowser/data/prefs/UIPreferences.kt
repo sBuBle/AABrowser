@@ -27,6 +27,7 @@ object UIPreferences {
     private const val KEY_QUICK_ACTION_BUTTON_MODE = "quick_action_button_mode"
     private const val KEY_QUICK_ACTION_BUTTON_ALWAYS_VISIBLE = "quick_action_button_always_visible"
     private const val KEY_QUICK_ACTION_BUTTON_POSITION = "quick_action_button_position"
+    private const val KEY_BOTTOM_TOOLBAR = "bottom_toolbar_enabled"
     const val KEY_HIDE_SPONSORS = "hide_sponsors"
     private const val KEY_USER_AGENT_PROFILE = "user_agent_profile"
     private const val KEY_CUSTOM_USER_AGENT = "custom_user_agent"
@@ -55,6 +56,18 @@ object UIPreferences {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_QUICK_ACTION_BUTTON_ALWAYS_VISIBLE, enabled)
+            .apply()
+    }
+
+    fun isBottomToolbarEnabled(context: Context): Boolean {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_BOTTOM_TOOLBAR, true)
+    }
+
+    fun setBottomToolbarEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_BOTTOM_TOOLBAR, enabled)
             .apply()
     }
 

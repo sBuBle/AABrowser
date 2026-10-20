@@ -23,6 +23,8 @@ import com.kododake.aabrowser.ui.compose.screens.menu.BrowserMenuFab
 import com.kododake.aabrowser.ui.compose.screens.menu.BrowserMenuSheet
 import com.kododake.aabrowser.ui.compose.screens.menu.MenuActions
 import com.kododake.aabrowser.ui.compose.screens.menu.MenuStateHolder
+import com.kododake.aabrowser.ui.compose.screens.toolbar.BrowserBottomToolbar
+import com.kododake.aabrowser.ui.compose.screens.toolbar.ToolbarActions
 import com.kododake.aabrowser.web.AdBlocker
 
 /**
@@ -55,7 +57,21 @@ class MenuSetupHelper {
         }
     }
 
-    fun showFab() { stateHolder.isFabVisible = true }
+    fun setupToolbar(composeView: ComposeView, tabCount: () -> Int, actions: ToolbarActions) {
+        composeView.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                BrowserBottomToolbar(
+                    stateHolder = stateHolder,
+                    tabCount = tabCount,
+                    actions = actions
+                )
+            }
+        }
+    }
+
+    /** The toolbar has its own menu button, so the floating one stays hidden while it is shown. */
+    fun showFab() { if (!stateHolder.isToolbarVisible) stateHolder.isFabVisible = true }
     fun hideFab() { stateHolder.isFabVisible = false }
     fun setFabMode(addressBarMode: Boolean) { stateHolder.fabIsAddressBarMode = addressBarMode }
 
@@ -64,9 +80,14 @@ class MenuSetupHelper {
         canForward: Boolean,
         canRel: Boolean,
         desktop: Boolean,
-        canQr: Boolean = false
+        canQr: Boolean = false,
+        onStartPage: Boolean = false
     ) {
-        stateHolder.updateNavigationState(canBack, canForward, canRel, desktop, canQr)
+        stateHolder.updateNavigationState(canBack, canForward, canRel, desktop, canQr, onStartPage)
+    }
+
+    fun requestAddressFocus() {
+        stateHolder.addressFocusRequest++
     }
 
     fun updatePage(url: String, title: String? = null) {

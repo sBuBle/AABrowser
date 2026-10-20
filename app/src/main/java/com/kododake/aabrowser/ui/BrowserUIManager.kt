@@ -20,11 +20,15 @@ package com.kododake.aabrowser.ui
 import android.content.Intent
 import android.net.Uri
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.compose.ui.graphics.toArgb
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.bookmarks.BookmarkManager
@@ -34,6 +38,8 @@ import com.kododake.aabrowser.model.QuickActionButtonMode
 import com.kododake.aabrowser.model.QuickActionButtonPosition
 import com.kododake.aabrowser.startpage.StartPageManager
 import com.kododake.aabrowser.tabs.TabManager
+import com.kododake.aabrowser.ui.compose.components.BrowserLayout
+import com.kododake.aabrowser.ui.compose.screens.toolbar.ToolbarActions
 import com.kododake.aabrowser.ui.controllers.FullscreenController
 import com.kododake.aabrowser.ui.controllers.MenuDragGestureHelper
 import com.kododake.aabrowser.web.adsBlockedCount
@@ -67,7 +73,46 @@ class BrowserUIManager(
 
     fun isInFullscreen(): Boolean = fullscreenController.isInFullscreen()
     fun isImmersiveMode(): Boolean = fullscreenController.isImmersiveMode()
-    fun setImmersiveMode(enabled: Boolean) = fullscreenController.setImmersiveMode(enabled)
+    fun setImmersiveMode(enabled: Boolean) {
+        fullscreenController.setImmersiveMode(enabled)
+        updateBottomToolbar()
+    }
+
+    private var isKeyboardVisible = false
+
+    fun setupBottomToolbar(actions: ToolbarActions) {
+        menuHelper.setupToolbar(binding.bottomToolbarComposeView, { tabManager.tabsState.value.size }, actions)
+        // Hidden while the keyboard is up, so a page's text field is not squeezed in between.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.contentRoot) { _, insets ->
+            val keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (keyboardVisible != isKeyboardVisible) {
+                isKeyboardVisible = keyboardVisible
+                updateBottomToolbar()
+            }
+            insets
+        }
+        updateBottomToolbar()
+    }
+
+    /**
+     * Shows the bottom toolbar on the phone (unless turned off in settings) and makes room for it
+     * below the page. The car display, full screen and video keep the floating menu button.
+     */
+    fun updateBottomToolbar() {
+        val visible = BrowserPreferences.isBottomToolbarEnabled(activity) &&
+            !BrowserLayout.isCarDisplay(binding.root) &&
+            !isInFullscreen() &&
+            !isImmersiveMode() &&
+            !isKeyboardVisible
+        if (visible == binding.bottomToolbarComposeView.isVisible) return
+        menuHelper.stateHolder.isToolbarVisible = visible
+        binding.bottomToolbarComposeView.isVisible = visible
+        val inset = if (visible) activity.resources.getDimensionPixelSize(R.dimen.bottom_toolbar_height) else 0
+        listOf(binding.webViewContainer, binding.startPageRoot).forEach { view ->
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = inset }
+        }
+        if (visible) menuHelper.hideFab() else callbacks.showMenuButtonTemporarily()
+    }
 
     fun enterFullscreen(view: View, callback: WebChromeClient.CustomViewCallback) {
         fullscreenController.enterFullscreen(
@@ -77,6 +122,7 @@ class BrowserUIManager(
                 if (binding.menuOverlay.isVisible) hideMenuOverlay()
                 menuHelper.hideFab()
                 tabManager.activeTab?.webView?.visibility = View.INVISIBLE
+                updateBottomToolbar()
             }
         )
     }
@@ -91,6 +137,7 @@ class BrowserUIManager(
                 callbacks.showMenuButtonTemporarily()
             }
         )
+        updateBottomToolbar()
     }
 
     fun applyQuickActionButtonPreferences() {
@@ -114,6 +161,7 @@ class BrowserUIManager(
         if ((startPageManager.isShowingStartPage || alwaysVisible) && !isInFullscreen() && !binding.menuOverlay.isVisible) {
             menuHelper.showFab()
         }
+        updateBottomToolbar()
     }
 
     fun showMenuOverlay(focusAddressBar: Boolean = false) {
@@ -124,6 +172,7 @@ class BrowserUIManager(
             title = if (isStart) "" else (curTab?.currentTitle.orEmpty())
         )
         refreshAdBlockMenuState()
+        if (focusAddressBar) menuHelper.requestAddressFocus()
         binding.menuOverlay.visibility = View.VISIBLE
         binding.menuComposeView.visibility = View.VISIBLE
         applyFrostedGlassProgress(if (menuHelper.stateHolder.isReturningFromSubscreen) 1f else 0f)

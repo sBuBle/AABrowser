@@ -19,10 +19,10 @@ package com.kododake.aabrowser.tabs
 
 import android.app.Activity
 import android.content.Context
-import android.content.res.Configuration
+
 import android.net.Uri
 import android.os.SystemClock
-import android.view.Display
+
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -30,6 +30,7 @@ import android.widget.FrameLayout
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.kododake.aabrowser.data.BrowserPreferences
+import com.kododake.aabrowser.ui.compose.components.BrowserLayout
 import com.kododake.aabrowser.web.AdBlocker
 import com.kododake.aabrowser.web.BrowserCallbacks
 import com.kododake.aabrowser.web.ScrollJumpGuard
@@ -122,7 +123,7 @@ object BrowserTabFactory {
                 // Only react to the start of a gesture: doing this for every move event
                 // re-posted the menu button timers and recomposed it while scrolling.
                 onShowMenuButtonTemporarily()
-                onCarDisplay = isCarDisplay(view)
+                onCarDisplay = BrowserLayout.isCarDisplay(view)
             }
             if (!onCarDisplay) return@setOnTouchListener false
 
@@ -169,16 +170,6 @@ object BrowserTabFactory {
                 webView.scrollTo(scrollX, restoreY)
             }
         }
-    }
-
-    /**
-     * Android Auto shows the browser on its own display; the phone's screen is the default one.
-     * Car UI mode covers head units that host the app on the main display.
-     */
-    private fun isCarDisplay(view: View): Boolean {
-        val displayId = view.display?.displayId ?: Display.DEFAULT_DISPLAY
-        val uiModeType = view.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
-        return displayId != Display.DEFAULT_DISPLAY || uiModeType == Configuration.UI_MODE_TYPE_CAR
     }
 
     /** Batched move events carry earlier samples too; a glitch hidden among them also counts. */

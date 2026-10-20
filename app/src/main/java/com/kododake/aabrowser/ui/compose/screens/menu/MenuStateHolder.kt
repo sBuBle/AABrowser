@@ -19,6 +19,7 @@ package com.kododake.aabrowser.ui.compose.screens.menu
 
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
@@ -44,6 +45,13 @@ class MenuStateHolder {
     var isMenuVisible by mutableStateOf(false)
     var isReturningFromSubscreen by mutableStateOf(false)
     var isFabVisible by mutableStateOf(false)
+
+    /** The phone's bottom toolbar is shown; it replaces the floating menu button. */
+    var isToolbarVisible by mutableStateOf(false)
+    var isOnStartPage by mutableStateOf(false)
+
+    /** Incremented to focus the menu's address field when the menu opens. */
+    var addressFocusRequest by mutableIntStateOf(0)
     var fabIsAddressBarMode by mutableStateOf(false)
 
     fun updateNavigationState(
@@ -51,8 +59,10 @@ class MenuStateHolder {
         canForward: Boolean,
         canRel: Boolean,
         desktop: Boolean,
-        canQr: Boolean = false
+        canQr: Boolean = false,
+        onStartPage: Boolean = false
     ) {
+        isOnStartPage = onStartPage
         canGoBack = canBack
         canGoForward = canForward
         canReload = canRel

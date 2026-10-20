@@ -20,7 +20,9 @@ package com.kododake.aabrowser
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -152,6 +154,23 @@ class MainActivity : AppCompatActivity(), MainActivityCallbackFactory.CallbackHo
         syncUserAgentProfile()
         syncAdBlocker()
         managers.uiManager.applyQuickActionButtonPreferences()
+    }
+
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        if (isTopResumedActivity) managers.tabManager.onScreenInUse()
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // The phone and the car screen can both be resumed; the one touched is the one in use.
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) managers.tabManager.onScreenInUse()
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The activity handles rotation and display changes itself; the toolbar depends on both.
+        managers.uiManager.updateBottomToolbar()
     }
 
     override fun onPause() {

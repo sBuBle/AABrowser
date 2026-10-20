@@ -40,6 +40,6 @@ object NavigationButtonUpdater {
         val canQrCode = canNavigate
 
         val isDesktop = com.kododake.aabrowser.data.BrowserPreferences.shouldUseDesktopMode(binding.root.context)
-        menuHelper?.updateNavigation(canGoBack, canGoForward, canReload, isDesktop, canQrCode)
+        menuHelper?.updateNavigation(canGoBack, canGoForward, canReload, isDesktop, canQrCode, isShowingStartPage)
     }
 }

@@ -26,6 +26,8 @@ object WebPreferences {
     private const val KEY_AD_BLOCKER = "ad_blocker_enabled"
     const val DEFAULT_AD_BLOCKER = true
     private const val KEY_AD_BLOCK_ALLOWED_SITES = "ad_block_allowed_sites"
+    private const val KEY_BLOCK_REDIRECTS = "block_popups_and_redirects"
+    private const val KEY_REDIRECT_ALLOWED_SITES = "redirect_allowed_sites"
 
     fun isDrmL3EnforcerEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -61,6 +63,31 @@ object WebPreferences {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putStringSet(KEY_AD_BLOCK_ALLOWED_SITES, sites.toSet())
+            .apply()
+    }
+
+    fun isRedirectBlockingEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_BLOCK_REDIRECTS, true)
+    }
+
+    fun setRedirectBlockingEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_BLOCK_REDIRECTS, enabled)
+            .apply()
+    }
+
+    /** Sites (hosts) allowed to open pop-ups and redirect to other sites. */
+    fun getRedirectAllowedSites(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_REDIRECT_ALLOWED_SITES, emptySet())?.toSet() ?: emptySet()
+    }
+
+    fun setRedirectAllowedSites(context: Context, sites: Set<String>) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putStringSet(KEY_REDIRECT_ALLOWED_SITES, sites.toSet())
             .apply()
     }
 }

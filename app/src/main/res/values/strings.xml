@@ -98,6 +98,12 @@
     <string name="settings_quick_action_button_mode">Floating button action</string>
     <string name="settings_quick_action_button_mode_menu">Open controls menu</string>
     <string name="settings_quick_action_button_mode_address_bar">Focus URL bar</string>
+    <string name="settings_bottom_toolbar">Bottom toolbar on phone</string>
+    <string name="settings_bottom_toolbar_description">Back, forward, address and tabs within thumb reach. The car screen and full screen mode keep the floating button.</string>
+    <plurals name="toolbar_open_tabs">
+        <item quantity="one">%1$d open tab</item>
+        <item quantity="other">%1$d open tabs</item>
+    </plurals>
     <string name="settings_quick_action_button_always_visible">Always show floating button</string>
     <string name="settings_quick_action_button_always_visible_description">Keep the in-app button on-screen instead of auto-hiding it after touching the page.</string>
     <string name="settings_quick_action_button_position">Floating button position</string>
@@ -141,6 +147,16 @@
     <string name="settings_ad_block_lists_update_failed">Couldn\'t update filter lists. Check your connection and try again.</string>
     <string name="popup_blocked">Pop-up ad blocked</string>
     <string name="ad_redirect_blocked">Redirect to an ad page blocked</string>
+    <string name="redirect_blocked">Blocked a redirect to %1$s</string>
+    <string name="popup_window_blocked">Blocked a pop-up window</string>
+    <string name="popup_window_allowed">Pop-ups allowed for this site. Tap again to open it.</string>
+    <string name="redirect_allow">Allow</string>
+    <string name="settings_block_redirects">Block pop-ups and redirects</string>
+    <string name="settings_block_redirects_description">Pages can only open windows or send you to another site when you tap a link. Tap Allow on the message to let a site do it.</string>
+    <string name="settings_redirect_allowed_sites">Sites allowed to open pop-ups and redirects</string>
+    <string name="settings_redirect_allowed_sites_empty">No sites yet. When a pop-up or redirect is blocked, tap Allow on the message to add the site.</string>
+    <string name="settings_redirect_allowed_sites_none">None · Tap Allow when a pop-up or redirect is blocked</string>
+    <string name="settings_redirect_allowed_site_remove">Block pop-ups and redirects on %1$s again</string>
     <string name="menu_ad_blocker">Ad blocker</string>
     <plurals name="menu_ad_blocker_count">
         <item quantity="one">%1$d ad or tracker blocked on this page</item>
