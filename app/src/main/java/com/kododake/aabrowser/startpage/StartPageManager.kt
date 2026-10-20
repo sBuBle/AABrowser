@@ -17,18 +17,15 @@
 
 package com.kododake.aabrowser.startpage
 
-import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableStateOf
-import com.kododake.aabrowser.AppConstants
 import com.kododake.aabrowser.R
 import com.kododake.aabrowser.bookmarks.BookmarkManager
 import com.kododake.aabrowser.data.BrowserPreferences
 import com.kododake.aabrowser.databinding.ActivityMainBinding
-import com.kododake.aabrowser.ui.QRUtils
 import com.kododake.aabrowser.ui.compose.screens.startpage.StartPageScreenCallbacks
 import com.kododake.aabrowser.ui.compose.screens.startpage.StartPageSlotUi
 import com.kododake.aabrowser.ui.compose.screens.startpage.StartPageViews
@@ -97,7 +94,6 @@ class StartPageManager(
                 )
             }
             val hasResumePage = !BrowserPreferences.getLastVisitedUrl(activity).isNullOrBlank()
-            val qrBitmap = QRUtils.generateQrCode("https://github.com/sponsors/kododake", 200)
 
             val screenCallbacks = StartPageScreenCallbacks(
                 onNavigate = { url -> callbacks.loadUrlFromIntent(url) },
@@ -130,28 +126,6 @@ class StartPageManager(
                 onPhotoOnlyToggle = {
                     isStartPagePhotoOnlyMode = !isStartPagePhotoOnlyMode
                     applyStartPagePhotoOnlyMode()
-                },
-                onOpenSponsors = { url ->
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        activity.startActivity(intent)
-                    } catch (_: Exception) {
-                        Toast.makeText(activity, R.string.error_generic_message, Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onOpenAAAnything = {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(AppConstants.AA_ANYTHING_LATEST_RELEASE_URL))
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        activity.startActivity(intent)
-                    } catch (_: Exception) {
-                        Toast.makeText(activity, R.string.error_generic_message, Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onDismissAAAnything = {
-                    BrowserPreferences.setShowAAAnythingPromotion(activity, false)
-                    refreshStartPage()
                 }
             )
 
@@ -159,7 +133,6 @@ class StartPageManager(
                 context = activity,
                 slots = slots,
                 hasResumePage = hasResumePage,
-                sponsorsQrBitmap = qrBitmap,
                 customBackgroundBitmapState = backgroundRenderer.customBackgroundBitmapState,
                 customBackgroundBitmapProvider = { backgroundRenderer.customBackgroundBitmap },
                 isNavigatingState = isNavigatingState,

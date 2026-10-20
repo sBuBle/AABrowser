@@ -83,8 +83,6 @@ object BrowserPreferences {
     fun setBottomToolbarEnabled(context: Context, enabled: Boolean) = UIPreferences.setBottomToolbarEnabled(context, enabled)
     fun getQuickActionButtonPosition(context: Context): QuickActionButtonPosition = UIPreferences.getQuickActionButtonPosition(context)
     fun setQuickActionButtonPosition(context: Context, position: QuickActionButtonPosition) = UIPreferences.setQuickActionButtonPosition(context, position)
-    fun shouldHideSponsors(context: Context): Boolean = UIPreferences.shouldHideSponsors(context)
-    fun setHideSponsors(context: Context, hide: Boolean) = UIPreferences.setHideSponsors(context, hide)
 
     // --- Tab Session ---
     fun getSavedTabSession(context: Context): List<TabSessionEntry> = TabSessionPreferences.getSavedTabSession(context)
@@ -115,9 +113,8 @@ object BrowserPreferences {
     fun getStartPageBackgroundUri(context: Context): String? = BookmarkPreferences.getStartPageBackgroundUri(context)
     fun setStartPageBackgroundUri(context: Context, uri: String?) = BookmarkPreferences.setStartPageBackgroundUri(context, uri)
     fun clearStartPageBackgroundUri(context: Context) = BookmarkPreferences.clearStartPageBackgroundUri(context)
-    fun shouldShowAAAnythingPromotion(context: Context): Boolean = BookmarkPreferences.shouldShowAAAnythingPromotion(context)
-    fun setShowAAAnythingPromotion(context: Context, show: Boolean) = BookmarkPreferences.setShowAAAnythingPromotion(context, show)
     fun ensureGameBookmarkMigrated(context: Context) = BookmarkPreferences.ensureGameBookmarkMigrated(context)
+    fun removeObsoleteData(context: Context) = UIPreferences.removeObsoleteData(context)
 
     // --- Site Permissions & Host Exceptions ---
     fun isHostAllowedCleartext(context: Context, host: String?): Boolean = SitePermissionPreferences.isHostAllowedCleartext(context, host)
