@@ -232,6 +232,7 @@ object WebScripts {
                     start();
                 }
             }
+${AD_BLOCK_EXTRAS_JS}
 
             let host = '';
             try { host = window.location.hostname || ''; } catch (_) {}

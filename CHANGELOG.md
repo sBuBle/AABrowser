@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- The ad blocker catches many more ads: it adds the uBlock filters (with their Quick fixes and Unbreak lists) and AdGuard Mobile Ads, plus AdGuard Russian on phones set to Russian, Ukrainian and neighbouring languages.
+- The ad blocker now runs uBlock Origin style scriptlets, which stop inline ads, pop-unders and "disable your ad blocker" walls, and procedural filters, which hide ads CSS alone cannot find (such as posts marked "Sponsored").
+- Ads loaded through a site's service worker are blocked too; before, they got past the ad blocker.
+- The filter engine understands more of the lists: regular expression rules, `$important`, `$badfilter`, `$redirect`, `$denyallow`, `$to`, `example.*` site entries, `:style()` and AdGuard's CSS rules, and `!#if` sections.
+
 ## 3.5
 - On car displays and phones in landscape, the browser menu fits on one screen: back, forward and reload sit in a slim header with Check for Updates, the shortcuts are compact, and the address bar uses the whole column.
 - Settings use two columns on wide screens (car displays, landscape, tablets).

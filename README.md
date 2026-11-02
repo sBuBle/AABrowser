@@ -16,7 +16,7 @@ This repository is a maintained fork of [kododake/AABrowser](https://github.com/
 
 - **Made for car screens:** Material 3 Expressive interface with large touch targets, a layout that adapts to wide car displays, and light, dark and true-black themes.
 - **Video and full screen:** plays DRM-protected video (Widevine L3) and switches to full screen with one tap.
-- **Ad and tracker blocking:** uses the EasyList, EasyPrivacy, Peter Lowe's and HaGeZi Light filter lists, updated automatically. It hides ad slots, skips YouTube video ads and can be turned off per site.
+- **Ad and tracker blocking:** uses the EasyList, EasyPrivacy, uBlock filters, AdGuard Mobile Ads, Peter Lowe's and HaGeZi Light filter lists (plus AdGuard Russian on devices set to Russian and neighbouring languages), updated automatically. It hides ad slots, runs uBlock Origin style scriptlets and procedural filters against inline ads, skips YouTube video ads and can be turned off per site.
 - **Pop-up and redirect blocking:** pages can only open windows or go to another site when you tap a link. Blocked attempts can be allowed per site.
 - **Reliable streaming:** audio and video recover after the connection drops (tunnels, Wi-Fi to mobile handover), and pages that failed offline reload when the connection returns.
 - **Tabs:** open, switch, close and restore tabs. The phone and the car screen share the same tabs.

@@ -150,8 +150,8 @@
     <string name="settings_ad_blocker">Ad blocker</string>
     <string name="settings_ad_blocker_description">Blocks ads, trackers and ad redirects, including YouTube video ads, for faster pages and smoother streaming.</string>
     <string name="settings_ad_block_lists">Ad block filter lists</string>
-    <string name="settings_ad_block_lists_status">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\n%1$s rules · Updated %2$s · Tap to update</string>
-    <string name="settings_ad_block_lists_never_updated">EasyList, EasyPrivacy, Peter Lowe\'s list and HaGeZi Light\nNot downloaded yet · Tap to download</string>
+    <string name="settings_ad_block_lists_status">EasyList, EasyPrivacy, uBlock, AdGuard, Peter Lowe\'s and HaGeZi lists\n%1$s rules · Updated %2$s · Tap to update</string>
+    <string name="settings_ad_block_lists_never_updated">EasyList, EasyPrivacy, uBlock, AdGuard, Peter Lowe\'s and HaGeZi lists\nNot downloaded yet · Tap to download</string>
     <string name="settings_ad_block_lists_updating">Updating filter lists…</string>
     <string name="settings_ad_block_lists_updated">Filter lists updated</string>
     <string name="settings_ad_block_lists_update_failed">Couldn\'t update filter lists. Check your connection and try again.</string>
