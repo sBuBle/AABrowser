@@ -65,14 +65,25 @@ internal val AD_BLOCK_EXTRAS_JS = """            // Scriptlets and procedural co
                         fn();
                     }
                 }
+                // Runs fn once the page is parsed and again (batched) whenever elements are added.
+                // One observer serves every caller, so many rules do not each watch the page.
+                const watchers = [];
+                let watchScheduled = false;
+                function runWatchers() {
+                    watchScheduled = false;
+                    for (let i = 0; i < watchers.length; i++) {
+                        try { watchers[i](); } catch (_) {}
+                    }
+                }
                 function observe(fn) {
-                    let scheduled = false;
+                    watchers.push(fn);
+                    if (watchers.length > 1) return;
                     onReady(function() {
-                        fn();
+                        runWatchers();
                         new MutationObserver(function() {
-                            if (scheduled) return;
-                            scheduled = true;
-                            nativeSetTimeout.call(win, function() { scheduled = false; fn(); }, 100);
+                            if (watchScheduled) return;
+                            watchScheduled = true;
+                            nativeSetTimeout.call(win, runWatchers, 150);
                         }).observe(document.documentElement, { childList: true, subtree: true });
                     });
                 }
@@ -213,6 +224,8 @@ internal val AD_BLOCK_EXTRAS_JS = """            // Scriptlets and procedural co
                     win[name] = patched;
                 }
                 function preventTimer(name, needle, delay) {
+                    // Without arguments uBlock Origin only logs the calls; it never stops them all.
+                    if (!needle && !delay) return;
                     wrapTimer(name, needle, delay, function(native, self) {
                         return native.call(self, function() {}, 1);
                     });
@@ -226,6 +239,7 @@ internal val AD_BLOCK_EXTRAS_JS = """            // Scriptlets and procedural co
                     });
                 }
                 function preventAddEventListener(type, needle) {
+                    if (!type && !needle) return; // logging only, as in uBlock Origin
                     const typeMatches = matcher(type || '');
                     const handlerMatches = matcher(needle || '');
                     const proto = win.EventTarget && win.EventTarget.prototype;
@@ -308,7 +322,8 @@ internal val AD_BLOCK_EXTRAS_JS = """            // Scriptlets and procedural co
                 }
                 // `url:pattern method:POST` style conditions; a bare pattern is matched against the URL.
                 function requestMatcher(conditions) {
-                    if (conditions === undefined) return function() { return false; };
+                    // Without conditions uBlock Origin only logs requests; never block them all.
+                    if (conditions === undefined || String(conditions).trim() === '') return function() { return false; };
                     const tests = [];
                     const parts = String(conditions).split(/\s+/).filter(Boolean);
                     for (let i = 0; i < parts.length; i++) {

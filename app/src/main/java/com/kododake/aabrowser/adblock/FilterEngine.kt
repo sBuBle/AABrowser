@@ -142,7 +142,10 @@ class FilterEngine private constructor(
         private val styles = CosmeticFilters.Builder()
         private val procedural = CosmeticFilters.Builder()
         private val scriptlets = CosmeticFilters.Builder()
-        private val badFilters = HashSet<String>()
+        /** Hashes of the rules `$badfilter` rules turn off, see [ruleKey]. */
+        private val badFilters = HashSet<Long>()
+        /** Hosts of turned off `||host^` rules, which are stored as plain hosts without a hash. */
+        private val badHosts = HashSet<String>()
         private var networkRuleCount = 0
         private var cosmeticRuleCount = 0
 
@@ -186,14 +189,14 @@ class FilterEngine private constructor(
         }
 
         fun build(): FilterEngine = FilterEngine(
-            block = block.build(badFilters),
-            importantBlock = importantBlock.build(badFilters),
-            allow = allow.build(badFilters),
-            navigationBlock = navigationBlock.build(badFilters),
-            navigationAllow = navigationAllow.build(badFilters),
-            documentAllow = documentAllow.build(badFilters),
-            elemHideAllow = elemHideAllow.build(badFilters),
-            genericHideAllow = genericHideAllow.build(badFilters),
+            block = block.build(badFilters, badHosts),
+            importantBlock = importantBlock.build(badFilters, badHosts),
+            allow = allow.build(badFilters, badHosts),
+            navigationBlock = navigationBlock.build(badFilters, badHosts),
+            navigationAllow = navigationAllow.build(badFilters, badHosts),
+            documentAllow = documentAllow.build(badFilters, badHosts),
+            elemHideAllow = elemHideAllow.build(badFilters, badHosts),
+            genericHideAllow = genericHideAllow.build(badFilters, badHosts),
             cosmetic = cosmetic.build(),
             styles = styles.build(),
             procedural = procedural.build(),
@@ -232,7 +235,9 @@ class FilterEngine private constructor(
             val options = parseOptions(text) ?: return
             if (options.raw != null) text = text.substring(0, text.length - options.raw.length - 1)
             if (options.badFilter) {
-                badFilters.add(ruleKey(line, options))
+                val key = ruleKey(line, options)
+                badFilters.add(hashKey(key))
+                PLAIN_HOST_RULE.matchEntire(key)?.let { badHosts.add(it.groupValues[1].lowercase()) }
                 return
             }
             val isRegex = text.length > 2 && text.startsWith('/') && text.endsWith('/')
@@ -251,7 +256,7 @@ class FilterEngine private constructor(
             } else {
                 RulePattern.OfUrl(UrlPattern(text))
             }
-            val rule = NetworkRule(pattern, options.thirdParty, options.domains, options.targets, ruleKey(line, options))
+            val rule = NetworkRule(pattern, options.thirdParty, options.domains, options.targets, hashKey(ruleKey(line, options)))
             if (isException) {
                 if (options.elemHide) elemHideAllow.add(rule)
                 if (options.genericHide) genericHideAllow.add(rule)
@@ -275,6 +280,20 @@ class FilterEngine private constructor(
             val kept = options.raw.split(',').filterNot { it.equals("badfilter", ignoreCase = true) }
             val base = line.substring(0, line.length - options.raw.length - 1)
             return if (kept.isEmpty()) base else base + "$" + kept.joinToString(",")
+        }
+
+        /**
+         * 64-bit FNV-1a hash of a rule key: rules keep this instead of their text, which would
+         * double the memory the lists take. A collision would need two of a few hundred thousand
+         * rules to share a hash, which is vanishingly unlikely.
+         */
+        private fun hashKey(key: String): Long {
+            var hash = -0x340d631b7bdddcdbL
+            for (c in key) {
+                hash = hash xor c.code.toLong()
+                hash *= 0x100000001b3L
+            }
+            return hash
         }
 
         private fun addCosmetic(domainList: String, separator: String, body: String) {
@@ -445,6 +464,7 @@ class FilterEngine private constructor(
         private val OPTION_START = Regex("^~?[a-z0-9-]+(=|,|$)")
         private val COSMETIC_DOMAINS = Regex("[A-Za-z0-9.,~*_\\-\\u0080-\\uFFFF]*")
         private val COSMETIC_SEPARATORS = listOf("#@$?#", "#$?#", "#@%#", "#@$#", "#@?#", "#@#", "#%#", "#$#", "#?#", "##")
+        private val PLAIN_HOST_RULE = Regex("\\|\\|([^/^*|$:]+)\\^")
         private val STYLE_SUFFIX = Regex(":style\\((.*)\\)$")
         private val CSS_INJECTION = Regex("(.+?)\\s*\\{(.*)\\}")
 
@@ -691,8 +711,8 @@ internal class NetworkRule(
     private val domains: DomainConstraint?,
     /** `to=` / `denyallow=`: constraints on the requested host itself. */
     private val targets: DomainConstraint? = null,
-    /** The rule's text, which `$badfilter` rules refer to. */
-    val key: String = ""
+    /** Hash of the rule's text, which `$badfilter` rules refer to. */
+    val key: Long = 0L
 ) {
     private val urlPattern: UrlPattern? = (pattern as? RulePattern.OfUrl)?.pattern
 
@@ -800,12 +820,13 @@ internal class RuleIndex private constructor(
             }
         }
 
-        /** Builds the index without the rules whose text is in [badFilters]. */
-        fun build(badFilters: Set<String> = emptySet()): RuleIndex {
+        /** Builds the index without the rules turned off by `$badfilter` rules. */
+        fun build(badFilters: Set<Long> = emptySet(), badHosts: Set<String> = emptySet()): RuleIndex {
+            plainHosts.removeAll(badHosts)
             if (badFilters.isEmpty()) return RuleIndex(plainHosts, byHost, byToken, byPageDomain, unindexed)
             fun List<NetworkRule>.kept() = filter { it.key !in badFilters }
             return RuleIndex(
-                plainHosts.filterTo(HashSet()) { "||$it^" !in badFilters },
+                plainHosts,
                 byHost.mapValues { it.value.kept() },
                 byToken.mapValues { it.value.kept() },
                 byPageDomain.mapValues { it.value.kept() },
@@ -815,9 +836,15 @@ internal class RuleIndex private constructor(
 
         private fun NetworkRule.isPlainHostRule(host: String): Boolean = isUnconstrained && body == "$host^"
 
+        /**
+         * The token a matching URL must contain: the longest whole token of the pattern, preferring
+         * rare ones. Short or common tokens (`a` in `/a.gif?`, `gif`) still beat leaving the rule
+         * unindexed, where it would be checked against every request.
+         */
         private fun bestToken(rule: NetworkRule): String? {
             val body = rule.body
             var best: String? = null
+            var bestScore = 0
             var i = 0
             while (i < body.length) {
                 if (!UrlPattern.isTokenChar(body[i])) {
@@ -827,10 +854,12 @@ internal class RuleIndex private constructor(
                 val start = i
                 while (i < body.length && UrlPattern.isTokenChar(body[i])) i++
                 val token = body.substring(start, i)
-                if (token.length >= 2 && token !in COMMON_TOKENS && rule.isWholeToken(start, i) &&
-                    (best == null || token.length > best.length)
-                ) {
-                    best = token
+                if (rule.isWholeToken(start, i)) {
+                    val score = if (token in COMMON_TOKENS) 1 else 2 + minOf(token.length, 64)
+                    if (score > bestScore) {
+                        best = token
+                        bestScore = score
+                    }
                 }
             }
             return best

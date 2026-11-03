@@ -116,6 +116,23 @@ class FilterEngineTest {
     }
 
     @Test
+    fun shortAndCommonTokenRules() {
+        val engine = engine("/a.gif?", ".com/b.js|", "/0.gif?\$third-party")
+        assertTrue(engine.shouldBlockRequest("https://x.example/a.gif?id=1", page))
+        assertFalse(engine.shouldBlockRequest("https://x.example/ba.gif?id=1", page))
+        assertTrue(engine.shouldBlockRequest("https://cdn.x.com/b.js", page))
+        assertFalse(engine.shouldBlockRequest("https://cdn.x.com/b.js?v=2", page))
+        assertTrue(engine.shouldBlockRequest("https://t.example/0.gif?x", page))
+        assertFalse(engine.shouldBlockRequest("https://news.example/0.gif?x", page))
+    }
+
+    @Test
+    fun badfilterOnHostsFileEntry() {
+        val engine = engine("0.0.0.0 cdn.example", "||cdn.example^\$badfilter")
+        assertFalse(engine.shouldBlockRequest("https://cdn.example/lib.js", page))
+    }
+
+    @Test
     fun redirectRulesBlock() {
         val engine = engine("||imasdk.example^\$script,redirect=google-ima.js", "@@||imasdk.example^\$redirect=noop.js")
         assertTrue(engine.shouldBlockRequest("https://imasdk.example/ima3.js", page))
