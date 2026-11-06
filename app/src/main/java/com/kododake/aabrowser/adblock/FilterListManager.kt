@@ -19,6 +19,7 @@ package com.kododake.aabrowser.adblock
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.os.LocaleList
 import android.util.Log
 import java.io.File
 import java.net.HttpURLConnection
@@ -33,7 +34,11 @@ import java.net.URL
  */
 object FilterListManager {
 
-    class FilterList(val id: String, val title: String, val urls: List<String>)
+    /**
+     * A downloadable list. [languages] limits a regional list to devices set to one of those
+     * languages; null means the list is always used.
+     */
+    class FilterList(val id: String, val title: String, val urls: List<String>, val languages: Set<String>? = null)
 
     val LISTS = listOf(
         FilterList(
@@ -69,8 +74,61 @@ object FilterListManager {
                 "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/light.txt",
                 "https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/light.txt"
             )
+        ),
+        // uBlock Origin's own lists: ads EasyList misses, scriptlets for inline and anti-adblock
+        // ads, fixes for EasyList rules that break sites, and exceptions that keep sites working.
+        FilterList(
+            id = "ublock-filters",
+            title = "uBlock filters",
+            urls = uBlockAsset("filters/filters.txt")
+        ),
+        FilterList(
+            id = "ublock-quick-fixes",
+            title = "uBlock filters – Quick fixes",
+            urls = uBlockAsset("filters/quick-fixes.txt")
+        ),
+        FilterList(
+            id = "ublock-unbreak",
+            title = "uBlock filters – Unbreak",
+            urls = uBlockAsset("filters/unbreak.txt")
+        ),
+        // Ads served to mobile browsers and in-app web views, which desktop lists leave out.
+        FilterList(
+            id = "adguard-mobile",
+            title = "AdGuard Mobile Ads",
+            urls = adGuardFilter(11)
+        ),
+        // Regional lists, used when the device is set to one of the region's languages.
+        FilterList(
+            id = "adguard-russian",
+            title = "AdGuard Russian",
+            urls = adGuardFilter(1),
+            languages = setOf("ru", "uk", "be", "kk", "ky", "tg", "uz", "hy", "az", "ka")
         )
     )
+
+    private fun uBlockAsset(path: String) = listOf(
+        "https://ublockorigin.github.io/uAssets/$path",
+        "https://cdn.jsdelivr.net/gh/uBlockOrigin/uAssets@latest/$path",
+        "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/$path"
+    )
+
+    /** AdGuard filter [id] in its uBlock Origin flavour, which uses the syntax the engine supports. */
+    private fun adGuardFilter(id: Int) = listOf(
+        "https://filters.adtidy.org/extension/ublock/filters/$id.txt",
+        "https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/platforms/extension/ublock/filters/$id.txt"
+    )
+
+    /** The lists used on this device: every general list, plus regional lists for its languages. */
+    fun activeLists(): List<FilterList> {
+        val languages = deviceLanguages()
+        return LISTS.filter { list -> list.languages == null || list.languages.any { it in languages } }
+    }
+
+    private fun deviceLanguages(): Set<String> {
+        val locales = LocaleList.getDefault()
+        return (0 until locales.size()).mapTo(HashSet()) { locales[it].language }
+    }
 
     private const val TAG = "FilterListManager"
     private const val DIRECTORY = "adblock"
@@ -80,17 +138,17 @@ object FilterListManager {
     private const val MIN_RULE_LINES = 100
 
     fun listFiles(context: Context): List<File> =
-        LISTS.map { fileFor(context, it) }.filter { it.isFile && it.length() > 0 }
+        activeLists().map { fileFor(context, it) }.filter { it.isFile && it.length() > 0 }
 
     /** Time of the oldest successful download, or 0 if any list has never been downloaded. */
     fun lastUpdated(context: Context): Long {
-        val files = LISTS.map { fileFor(context, it) }
+        val files = activeLists().map { fileFor(context, it) }
         if (files.any { !it.isFile }) return 0L
         return files.minOf { it.lastModified() }
     }
 
     fun needsUpdate(context: Context, now: Long = System.currentTimeMillis()): Boolean {
-        val oldest = LISTS.minOf { fileFor(context, it).takeIf(File::isFile)?.lastModified() ?: 0L }
+        val oldest = activeLists().minOf { fileFor(context, it).takeIf(File::isFile)?.lastModified() ?: 0L }
         val age = now - oldest
         if (age < UPDATE_INTERVAL_MS) return false
         val metered = context.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered ?: true
@@ -104,7 +162,7 @@ object FilterListManager {
     fun downloadAll(context: Context): Boolean {
         val directory = File(context.filesDir, DIRECTORY).apply { mkdirs() }
         var updated = false
-        LISTS.forEach { list ->
+        activeLists().forEach { list ->
             val target = File(directory, "${list.id}.txt")
             val temp = File(directory, "${list.id}.tmp")
             val ok = list.urls.any { url -> download(url, temp) }

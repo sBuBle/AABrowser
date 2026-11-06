@@ -23,11 +23,15 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.ServiceWorkerClient
+import android.webkit.ServiceWorkerController
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import com.kododake.aabrowser.adblock.FilterEngine
 import com.kododake.aabrowser.adblock.FilterListManager
 import com.kododake.aabrowser.data.BrowserPreferences
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -36,10 +40,11 @@ import java.util.concurrent.Executors
 /**
  * WebView-facing side of the ad blocker.
  *
- * Starts with the bundled `adblock_builtin.txt` rules, then loads EasyList, EasyPrivacy, Peter
- * Lowe's list and HaGeZi Light (downloaded and refreshed by [FilterListManager]) on a background
- * thread and swaps the new [FilterEngine] in once it is built. Request checks run on WebView's
- * network threads, so they only read the current engine and never wait for it.
+ * Starts with the bundled `adblock_builtin.txt` rules, then loads the lists in
+ * [FilterListManager.LISTS] (EasyList, EasyPrivacy, uBlock filters, AdGuard, ...; downloaded and
+ * refreshed by [FilterListManager]) on a background thread and swaps the new [FilterEngine] in
+ * once it is built. Request checks run on WebView's network threads, so they only read the
+ * current engine and never wait for it.
  */
 object AdBlocker {
     private const val BUILTIN_RULES_ASSET = "adblock_builtin.txt"
@@ -77,6 +82,7 @@ object AdBlocker {
             isEnabled = BrowserPreferences.isAdBlockerEnabled(appContext)
             allowedSites.load(appContext)
             RedirectBlocker.initialize(appContext)
+            installServiceWorkerBlocking()
             initialized = true
         }
         worker.execute {
@@ -87,6 +93,23 @@ object AdBlocker {
                 rebuildEngine(appContext, includeDownloadedLists = true)
             }
         }
+    }
+
+    /**
+     * Requests a site's service worker makes (including the page requests it handles itself) never
+     * reach the WebViewClient, so ads fetched through a service worker would otherwise get through.
+     * They carry no page URL; the Referer, normally the site's own page or worker, stands in for it.
+     */
+    private fun installServiceWorkerBlocking() {
+        runCatching {
+            ServiceWorkerController.getInstance().setServiceWorkerClient(object : ServiceWorkerClient() {
+                override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? {
+                    val referer = request.requestHeaders.entries
+                        .firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value
+                    return if (shouldBlock(request, referer)) blockedResponse(request) else null
+                }
+            })
+        }.onFailure { e -> Log.w(TAG, "Service worker blocking unavailable: ${e.message}") }
     }
 
     fun setEnabled(enabled: Boolean) {
@@ -171,6 +194,25 @@ object AdBlocker {
         fun pageCss(pageUrl: String?, isTopFrame: Boolean): String {
             if (!isEnabled || pageUrl.isNullOrEmpty() || isAllowedSite(pageUrl)) return ""
             return runCatching { engine.pageCss(pageUrl, includeGenericComplex = isTopFrame) }.getOrDefault("")
+        }
+
+        /**
+         * Scriptlets and procedural cosmetic filters for [pageUrl] as JSON:
+         * `{"scriptlets": [["name", "arg", ...], ...], "procedural": ["selector", ...]}`.
+         */
+        @JavascriptInterface
+        fun pageExtras(pageUrl: String?): String {
+            if (!isEnabled || pageUrl.isNullOrEmpty() || isAllowedSite(pageUrl)) return ""
+            return runCatching {
+                val current = engine
+                val scriptlets = current.scriptlets(pageUrl)
+                val procedural = current.proceduralSelectors(pageUrl)
+                if (scriptlets.isEmpty() && procedural.isEmpty()) return ""
+                JSONObject()
+                    .put("scriptlets", JSONArray(scriptlets.map { JSONArray(it) }))
+                    .put("procedural", JSONArray(procedural))
+                    .toString()
+            }.getOrDefault("")
         }
 
         @JavascriptInterface
